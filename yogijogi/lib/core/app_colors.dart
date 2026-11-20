@@ -19,17 +19,22 @@ abstract final class AppColors {
 }
 
 abstract final class AppTextStyles {
+  static const fontFamily = 'Pretendard';
+
   static const title = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 18,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
   static const body = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
   );
   static const caption = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w300,
     color: AppColors.textSecondary,
