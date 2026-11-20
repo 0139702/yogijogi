@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/app_colors.dart';
 import 'prime_floor.dart';
 
 class PrimeFloorView extends StatelessWidget {
@@ -33,10 +34,10 @@ class PrimeFloorView extends StatelessWidget {
                 bounds.right * width,
                 bounds.bottom * height,
               );
-              const passage = ColoredBox(color: Color(0xffe2e8e6));
+              const passage = ColoredBox(color: AppColors.border);
               return DecoratedBox(
                 decoration: BoxDecoration(
-                  color: const Color(0xfff3f6f5),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Stack(
@@ -44,11 +45,11 @@ class PrimeFloorView extends StatelessWidget {
                     Positioned.fromRect(rect: scale(primeHall), child: passage),
                     Positioned.fromRect(
                       rect: scale(primeCorridor),
-                      child: const ColoredBox(
-                        color: Color(0xffe2e8e6),
+                      child: ColoredBox(
+                        color: AppColors.border,
                         child: Align(
                           alignment: Alignment.topCenter,
-                          child: Text('중앙 복도', style: TextStyle(fontSize: 11)),
+                          child: Text('중앙 복도', style: AppTextStyles.caption),
                         ),
                       ),
                     ),
@@ -56,10 +57,11 @@ class PrimeFloorView extends StatelessWidget {
                       Positioned.fromRect(
                         rect: scale(stairs),
                         child: const ColoredBox(
-                          color: Color(0xffe4e0ed),
+                          color: AppColors.brandSoft,
                           child: Center(
                             child: Icon(
                               Icons.stairs_outlined,
+                              color: AppColors.textSecondary,
                               semanticLabel: '계단',
                             ),
                           ),
@@ -76,11 +78,14 @@ class PrimeFloorView extends StatelessWidget {
                             excludeFromSemantics: true,
                             child: Material(
                               color: place == highlightedPlace
-                                  ? const Color(0xffa3d5bd)
+                                  ? AppColors.accentMint
                                   : place == PrimePlace.elevator
-                                  ? const Color(0xffcde6da)
-                                  : const Color(0xffdae4f5),
-                              borderRadius: BorderRadius.circular(6),
+                                  ? AppColors.accentMint.withValues(alpha: 0.4)
+                                  : AppColors.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                side: const BorderSide(color: AppColors.border),
+                              ),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(6),
                                 onTap: () => onPlaceSelected(place),
@@ -88,7 +93,10 @@ class PrimeFloorView extends StatelessWidget {
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: ExcludeSemantics(
-                                      child: Text(place.mapLabel),
+                                      child: Text(
+                                        place.mapLabel,
+                                        style: AppTextStyles.body,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -106,7 +114,7 @@ class PrimeFloorView extends StatelessWidget {
                             dimension: 6,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color: Color(0xff50569a),
+                                color: AppColors.brandStrong,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -126,8 +134,8 @@ class PrimeFloorView extends StatelessWidget {
                         child: const IgnorePointer(
                           child: Icon(
                             Icons.navigation,
-                            color: Color(0xff50569a),
-                            semanticLabel: '??? ?? ??',
+                            color: AppColors.brandStrong,
+                            semanticLabel: '현재 안내 위치',
                           ),
                         ),
                       ),
@@ -169,7 +177,7 @@ class _DemoRoutePainter extends CustomPainter {
     canvas.drawPath(path, stroke);
     stroke
       ..strokeWidth = 4
-      ..color = const Color(0xff00695c);
+      ..color = AppColors.brand;
     canvas.drawPath(path, stroke);
 
     final marker = Paint()..color = const Color(0xffffffff);

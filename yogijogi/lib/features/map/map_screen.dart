@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/app_colors.dart';
 import '../navigation/guidance.dart';
 import 'place_search.dart';
 import 'prime_floor.dart';
@@ -108,17 +109,20 @@ class _MapScreenState extends State<MapScreen> {
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenPadding,
+            0,
+            AppSpacing.screenPadding,
+            16,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                place.label,
-                style: Theme.of(sheetContext).textTheme.titleLarge,
-              ),
-              Text(place.detail),
-              const SizedBox(height: 16),
+              Text(place.label, style: AppTextStyles.title),
+              const SizedBox(height: 4),
+              Text(place.detail, style: AppTextStyles.caption),
+              const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => Navigator.pop(sheetContext, true),
                 child: const Text('목적지로 설정'),
@@ -136,20 +140,35 @@ class _MapScreenState extends State<MapScreen> {
     final step = widget.guideStep;
     final destination = widget.destination;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        8,
+        AppSpacing.screenPadding,
+        24,
+      ),
       children: [
-        Text('프라임관 6층', style: Theme.of(context).textTheme.headlineSmall),
-        const Text('층 안내도 기반 데모'),
-        Wrap(
-          spacing: 8,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            OutlinedButton.icon(
-              onPressed: () => _openSearch(context),
-              icon: const Icon(Icons.search),
-              label: const Text('건물·강의실 검색'),
-            ),
+            Text('프라임관 6층', style: AppTextStyles.title),
+            const SizedBox(width: 8),
+            Text('층 안내도 기반 데모', style: AppTextStyles.caption),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _SearchBar(onTap: () => _openSearch(context))),
+            const SizedBox(width: AppSpacing.elementGapHorizontal),
             OutlinedButton.icon(
               onPressed: widget.onDirections,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               icon: const Icon(Icons.turn_right),
               label: const Text('길찾기 열기'),
             ),
@@ -158,46 +177,87 @@ class _MapScreenState extends State<MapScreen> {
         const SizedBox(height: 12),
         if (step != null && destination != null)
           Card(
+            margin: EdgeInsets.zero,
             child: Column(
               children: [
                 ListTile(
                   dense: true,
-                  leading: const Icon(Icons.trip_origin),
-                  title: Text(widget.start.label),
-                  subtitle: const Text('출발'),
+                  leading: const Icon(
+                    Icons.trip_origin,
+                    color: AppColors.brand,
+                  ),
+                  title: Text(widget.start.label, style: AppTextStyles.body),
+                  subtitle: Text('출발', style: AppTextStyles.caption),
                 ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
                   dense: true,
-                  leading: const Icon(Icons.place_outlined),
-                  title: Text(destination.label),
-                  subtitle: const Text('도착'),
+                  leading: const Icon(
+                    Icons.place_outlined,
+                    color: AppColors.brandStrong,
+                  ),
+                  title: Text(destination.label, style: AppTextStyles.body),
+                  subtitle: Text('도착', style: AppTextStyles.caption),
                 ),
               ],
             ),
           )
         else ...[
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final filter in PlaceFilter.values)
-                FilterChip(
-                  label: Text(filter.label),
-                  selected: _filter == filter,
-                  onSelected: (_) => setState(() => _filter = filter),
-                ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final filter in PlaceFilter.values)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      right: AppSpacing.elementGapHorizontal,
+                    ),
+                    child: FilterChip(
+                      avatar: Icon(
+                        filter.icon,
+                        size: 16,
+                        color: _filter == filter
+                            ? AppColors.brandStrong
+                            : AppColors.brand,
+                      ),
+                      showCheckmark: false,
+                      label: Text(filter.label),
+                      selected: _filter == filter,
+                      onSelected: (_) => setState(() => _filter = filter),
+                    ),
+                  ),
+              ],
+            ),
           ),
           if (_filter != PlaceFilter.all && _filter != PlaceFilter.elevator)
-            Text(_filter.emptyMessage),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(_filter.emptyMessage, style: AppTextStyles.caption),
+            ),
         ],
-        if (widget.routeLabel != null) Text(widget.routeLabel!),
-        PrimeFloorView(
-          route: widget.demoRoute,
-          highlightedPlace: _filter == PlaceFilter.elevator
-              ? PrimePlace.elevator
-              : null,
-          guidePosition: step == null ? null : widget.demoRoute[step],
-          onPlaceSelected: (place) => _openPlace(context, place),
+        const SizedBox(height: 8),
+        if (widget.routeLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _RouteBadge(label: widget.routeLabel!),
+          ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: PrimeFloorView(
+              route: widget.demoRoute,
+              highlightedPlace: _filter == PlaceFilter.elevator
+                  ? PrimePlace.elevator
+                  : null,
+              guidePosition: step == null ? null : widget.demoRoute[step],
+              onPlaceSelected: (place) => _openPlace(context, place),
+            ),
+          ),
         ),
         if (step != null) ...[
           const SizedBox(height: 16),
@@ -212,6 +272,74 @@ class _MapScreenState extends State<MapScreen> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: AppColors.border),
+    );
+    return Material(
+      color: AppColors.surface,
+      shape: shape,
+      child: InkWell(
+        customBorder: shape,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: AppColors.brand),
+              const SizedBox(width: AppSpacing.elementGapHorizontal),
+              Expanded(
+                child: Text(
+                  '건물·강의실 검색',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RouteBadge extends StatelessWidget {
+  const _RouteBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.brandSoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.route, size: 16, color: AppColors.brandStrong),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.body.copyWith(color: AppColors.brandStrong),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -244,7 +372,7 @@ class _GuidancePanel extends StatelessWidget {
       _ => '복도에서 목적지 출입문으로 이동하세요.',
     };
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GestureDetector(
           key: const ValueKey('guidance-step-card'),
@@ -254,55 +382,76 @@ class _GuidancePanel extends StatelessWidget {
             if (velocity > 0 && step > 0) onStepChanged(step - 1);
           },
           child: Card(
+            margin: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('데모 안내 · ${step + 1}/${lastStep + 1}'),
-                  Text(
-                    instruction,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.zoom_in),
-                    label: const Text('안내도 확대'),
-                    onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('층 안내도 · 데모'),
-                        content: SizedBox(
-                          width: 480,
-                          child: IgnorePointer(
-                            child: PrimeFloorView(
-                              route: route,
-                              guidePosition: route[step],
-                              onPlaceSelected: (_) {},
-                            ),
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            child: const Text('닫기'),
-                          ),
-                        ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandSoft,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '데모 안내 · ${step + 1}/${lastStep + 1}',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.brandStrong,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text(instruction, style: AppTextStyles.title),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       for (var index = 0; index <= lastStep; index++)
                         IconButton(
                           tooltip: '${index + 1}단계로 이동',
+                          visualDensity: VisualDensity.compact,
                           icon: Icon(
                             index == step
                                 ? Icons.circle
                                 : Icons.circle_outlined,
                             size: 12,
+                            color: index == step
+                                ? AppColors.brand
+                                : AppColors.border,
                           ),
                           onPressed: () => onStepChanged(index),
                         ),
+                      const Spacer(),
+                      TextButton.icon(
+                        icon: const Icon(Icons.zoom_in),
+                        label: const Text('안내도 확대'),
+                        onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            title: const Text('층 안내도 · 데모'),
+                            content: SizedBox(
+                              width: 480,
+                              child: IgnorePointer(
+                                child: PrimeFloorView(
+                                  route: route,
+                                  guidePosition: route[step],
+                                  onPlaceSelected: (_) {},
+                                ),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                child: const Text('닫기'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -310,34 +459,51 @@ class _GuidancePanel extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 12),
         Wrap(
-          spacing: 8,
+          spacing: AppSpacing.elementGapHorizontal,
           children: [
             for (final candidate in GuidanceView.values)
               ChoiceChip(
                 label: Text(candidate.label),
+                showCheckmark: false,
                 selected: view == candidate,
                 onSelected: (_) => onViewChanged(candidate),
               ),
           ],
         ),
         if (view == GuidanceView.follow)
-          const Text('수룡이 따라가기 시점 선택됨 · 3D 적용 전'),
-        Wrap(
-          spacing: 8,
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              '수룡이 따라가기 시점 선택됨 · 3D 적용 전',
+              style: AppTextStyles.caption,
+            ),
+          ),
+        const SizedBox(height: 16),
+        Row(
           children: [
-            TextButton(
-              onPressed: step == 0 ? null : () => onStepChanged(step - 1),
-              child: const Text('이전 단계'),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: step == 0 ? null : () => onStepChanged(step - 1),
+                child: const Text('이전 단계'),
+              ),
             ),
-            FilledButton(
-              onPressed: step == lastStep
-                  ? null
-                  : () => onStepChanged(step + 1),
-              child: const Text('다음 단계'),
+            const SizedBox(width: AppSpacing.elementGapHorizontal),
+            Expanded(
+              child: FilledButton(
+                onPressed: step == lastStep
+                    ? null
+                    : () => onStepChanged(step + 1),
+                child: const Text('다음 단계'),
+              ),
             ),
-            TextButton(onPressed: onEnd, child: const Text('안내 종료')),
           ],
+        ),
+        TextButton(
+          onPressed: onEnd,
+          style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+          child: const Text('안내 종료'),
         ),
       ],
     );

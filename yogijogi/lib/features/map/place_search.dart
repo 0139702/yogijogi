@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/app_colors.dart';
 import 'prime_floor.dart';
 
 enum PlaceFilter {
@@ -67,7 +68,7 @@ class _PlaceSearchState extends State<PlaceSearch> {
                 padding: const EdgeInsets.all(16),
                 child: TextField(
                   decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
+                    prefixIcon: Icon(Icons.search, color: AppColors.brand),
                     labelText: '건물명이나 호실 검색',
                     hintText: '예: 미술, 공학, 603',
                   ),
@@ -85,7 +86,7 @@ class _PlaceSearchState extends State<PlaceSearch> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('최근 검색'),
+                          Text('최근 검색', style: AppTextStyles.title),
                           if (widget.recent.isNotEmpty)
                             TextButton(
                               onPressed: () => setState(widget.onClearRecent),
@@ -93,7 +94,8 @@ class _PlaceSearchState extends State<PlaceSearch> {
                             ),
                         ],
                       ),
-                      if (widget.recent.isEmpty) const Text('최근 검색이 없습니다.'),
+                      if (widget.recent.isEmpty)
+                        Text('최근 검색이 없습니다.', style: AppTextStyles.caption),
                       for (final place in widget.recent)
                         ListTile(
                           leading: const Icon(Icons.history),
@@ -101,13 +103,19 @@ class _PlaceSearchState extends State<PlaceSearch> {
                           onTap: () => Navigator.pop(context, place),
                         ),
                       const SizedBox(height: 12),
-                      const Text('빠른 검색'),
+                      Text('빠른 검색', style: AppTextStyles.title),
+                      const SizedBox(height: 8),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.elementGapHorizontal,
+                        runSpacing: 8,
                         children: [
                           for (final filter in PlaceFilter.values.skip(1))
                             ActionChip(
-                              avatar: Icon(filter.icon, size: 18),
+                              avatar: Icon(
+                                filter.icon,
+                                size: 16,
+                                color: AppColors.brand,
+                              ),
                               label: Text(filter.label),
                               onPressed: () => setState(() => _filter = filter),
                             ),
@@ -120,11 +128,19 @@ class _PlaceSearchState extends State<PlaceSearch> {
                           onDeleted: () =>
                               setState(() => _filter = PlaceFilter.all),
                         ),
-                      if (places.isEmpty) Text(_filter.emptyMessage),
+                      if (places.isEmpty)
+                        Text(
+                          _filter.emptyMessage,
+                          style: AppTextStyles.caption,
+                        ),
                       for (final place in places)
                         ListTile(
-                          title: Text(place.label),
-                          subtitle: Text(place.detail),
+                          leading: const Icon(Icons.place_outlined),
+                          title: Text(place.label, style: AppTextStyles.body),
+                          subtitle: Text(
+                            place.detail,
+                            style: AppTextStyles.caption,
+                          ),
                           onTap: () => Navigator.pop(context, place),
                         ),
                     ],
