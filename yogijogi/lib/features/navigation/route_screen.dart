@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../map/prime_floor.dart';
+
 enum _RouteOption {
   shortest('최단거리', '이동 거리가 가장 짧은 경로'),
   elevator('엘리베이터 우선', '엘리베이터를 우선하며 계단이 포함될 수 있음'),
@@ -11,35 +13,28 @@ enum _RouteOption {
   final String description;
 }
 
-enum _DemoPlace {
-  elevator('6층 엘리베이터 앞'),
-  room601('601호 네트워크보안 실습실'),
-  room602('602호 프로그래밍 실습실 A'),
-  room603('603호 프로그래밍 실습실 B'),
-  room604('604호 해킹실습실'),
-  room605('605호 디지털보안 실습실');
-
-  const _DemoPlace(this.label);
-
-  final String label;
-}
-
 class RouteScreen extends StatefulWidget {
-  const RouteScreen({super.key});
+  const RouteScreen({
+    super.key,
+    required this.destination,
+    required this.onDestinationChanged,
+  });
+
+  final PrimePlace? destination;
+  final ValueChanged<PrimePlace> onDestinationChanged;
 
   @override
   State<RouteScreen> createState() => _RouteScreenState();
 }
 
 class _RouteScreenState extends State<RouteScreen> {
-  _DemoPlace _start = _DemoPlace.elevator;
-  _DemoPlace? _destination;
+  PrimePlace _start = PrimePlace.elevator;
   _RouteOption _option = _RouteOption.shortest;
 
   Widget _placeField({
     required String label,
-    required _DemoPlace? value,
-    required ValueChanged<_DemoPlace> onChanged,
+    required PrimePlace? value,
+    required ValueChanged<PrimePlace> onChanged,
   }) {
     return InputDecorator(
       decoration: InputDecoration(
@@ -47,7 +42,7 @@ class _RouteScreenState extends State<RouteScreen> {
         border: const OutlineInputBorder(),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<_DemoPlace>(
+        child: DropdownButton<PrimePlace>(
           isExpanded: true,
           isDense: true,
           value: value,
@@ -56,7 +51,7 @@ class _RouteScreenState extends State<RouteScreen> {
             if (place != null) onChanged(place);
           },
           items: [
-            for (final place in _DemoPlace.values)
+            for (final place in PrimePlace.values)
               DropdownMenuItem(value: place, child: Text(place.label)),
           ],
         ),
@@ -66,7 +61,7 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final destination = _destination;
+    final destination = widget.destination;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -87,16 +82,16 @@ class _RouteScreenState extends State<RouteScreen> {
             icon: const Icon(Icons.swap_vert),
             onPressed: destination == null
                 ? null
-                : () => setState(() {
-                    _destination = _start;
-                    _start = destination;
-                  }),
+                : () {
+                    widget.onDestinationChanged(_start);
+                    setState(() => _start = destination);
+                  },
           ),
         ),
         _placeField(
           label: '목적지',
           value: destination,
-          onChanged: (place) => setState(() => _destination = place),
+          onChanged: widget.onDestinationChanged,
         ),
         const SizedBox(height: 24),
         Text('어떤 길로 갈까요?', style: Theme.of(context).textTheme.titleLarge),

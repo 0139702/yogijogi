@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'core/app_config.dart';
 import 'features/map/map_screen.dart';
+import 'features/map/prime_floor.dart';
 import 'features/navigation/route_screen.dart';
 import 'features/reports/report_api.dart';
 import 'features/reports/reports_screen.dart';
@@ -16,6 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final _api = ReportApi(AppConfig.apiBaseUrl);
   int _index = 0;
+  PrimePlace? _destination;
 
   @override
   void dispose() {
@@ -33,8 +35,18 @@ class _MyAppState extends State<MyApp> {
         body: IndexedStack(
           index: _index,
           children: [
-            MapScreen(onDirections: () => setState(() => _index = 1)),
-            const RouteScreen(),
+            MapScreen(
+              onDirections: () => setState(() => _index = 1),
+              onPlaceSelected: (place) => setState(() {
+                _destination = place;
+                _index = 1;
+              }),
+            ),
+            RouteScreen(
+              destination: _destination,
+              onDestinationChanged: (place) =>
+                  setState(() => _destination = place),
+            ),
             if (_index == 2)
               ReportsScreen(api: _api)
             else

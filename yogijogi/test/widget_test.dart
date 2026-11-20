@@ -13,11 +13,20 @@ void main() {
     expect(find.text('계단 없는 경로'), findsOneWidget);
   });
 
+  testWidgets('selects a room on the floor map as destination', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('603호'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('6층 엘리베이터 앞'), findsOneWidget);
+    expect(find.text('603호 프로그래밍 실습실 B'), findsOneWidget);
+  });
+
   testWidgets('opens the reports tab without an API configuration', (
     tester,
   ) async {
     await tester.pumpWidget(const MyApp());
-    expect(find.text('캠퍼스 지도 준비 중'), findsOneWidget);
+    expect(find.text('프라임관 6층'), findsOneWidget);
 
     await tester.tap(find.text('제보'));
     await tester.pumpAndSettle();
