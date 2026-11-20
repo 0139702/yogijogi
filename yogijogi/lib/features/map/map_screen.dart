@@ -5,11 +5,13 @@ import 'prime_floor.dart';
 class MapScreen extends StatelessWidget {
   const MapScreen({
     super.key,
+    required this.demoRoute,
     required this.onDirections,
     required this.onPlaceSelected,
   });
 
   final VoidCallback onDirections;
+  final List<Offset> demoRoute;
   final ValueChanged<PrimePlace> onPlaceSelected;
 
   @override
@@ -25,6 +27,7 @@ class MapScreen extends StatelessWidget {
           label: const Text('길찾기 열기'),
         ),
         const SizedBox(height: 16),
+        if (demoRoute.isNotEmpty) const Text('샘플 경로 · 엘리베이터 앞 → 603호'),
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -124,6 +127,14 @@ class MapScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+                        if (demoRoute.isNotEmpty)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: CustomPaint(
+                                painter: _DemoRoutePainter(demoRoute),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   );
@@ -135,4 +146,47 @@ class MapScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _DemoRoutePainter extends CustomPainter {
+  const _DemoRoutePainter(this.points);
+
+  final List<Offset> points;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Offset scale(Offset point) =>
+        Offset(point.dx * size.width, point.dy * size.height);
+
+    final start = scale(points.first);
+    final end = scale(points.last);
+    final path = Path()..moveTo(start.dx, start.dy);
+    for (final point in points.skip(1)) {
+      final position = scale(point);
+      path.lineTo(position.dx, position.dy);
+    }
+
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 7
+      ..color = const Color(0xffffffff);
+    canvas.drawPath(path, stroke);
+    stroke
+      ..strokeWidth = 4
+      ..color = const Color(0xff00695c);
+    canvas.drawPath(path, stroke);
+
+    final marker = Paint()..color = const Color(0xffffffff);
+    canvas.drawCircle(start, 5, marker);
+    canvas.drawCircle(end, 6, marker);
+    marker.color = stroke.color;
+    canvas.drawCircle(start, 3, marker);
+    canvas.drawCircle(end, 4, marker);
+  }
+
+  @override
+  bool shouldRepaint(_DemoRoutePainter oldDelegate) =>
+      oldDelegate.points != points;
 }

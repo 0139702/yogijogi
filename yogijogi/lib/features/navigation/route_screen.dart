@@ -16,19 +16,24 @@ enum _RouteOption {
 class RouteScreen extends StatefulWidget {
   const RouteScreen({
     super.key,
+    required this.start,
     required this.destination,
+    required this.onStartChanged,
     required this.onDestinationChanged,
+    required this.onShowRoute,
   });
 
+  final PrimePlace start;
   final PrimePlace? destination;
+  final ValueChanged<PrimePlace> onStartChanged;
   final ValueChanged<PrimePlace> onDestinationChanged;
+  final VoidCallback onShowRoute;
 
   @override
   State<RouteScreen> createState() => _RouteScreenState();
 }
 
 class _RouteScreenState extends State<RouteScreen> {
-  PrimePlace _start = PrimePlace.elevator;
   _RouteOption _option = _RouteOption.shortest;
 
   Widget _placeField({
@@ -61,7 +66,9 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final start = widget.start;
     final destination = widget.destination;
+    final hasDemoRoute = primeDemoRoute(start, destination).isNotEmpty;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -72,8 +79,8 @@ class _RouteScreenState extends State<RouteScreen> {
         const SizedBox(height: 16),
         _placeField(
           label: '출발지',
-          value: _start,
-          onChanged: (place) => setState(() => _start = place),
+          value: start,
+          onChanged: widget.onStartChanged,
         ),
         Align(
           alignment: Alignment.centerRight,
@@ -83,8 +90,8 @@ class _RouteScreenState extends State<RouteScreen> {
             onPressed: destination == null
                 ? null
                 : () {
-                    widget.onDestinationChanged(_start);
-                    setState(() => _start = destination);
+                    widget.onDestinationChanged(start);
+                    widget.onStartChanged(destination);
                   },
           ),
         ),
@@ -93,6 +100,15 @@ class _RouteScreenState extends State<RouteScreen> {
           value: destination,
           onChanged: widget.onDestinationChanged,
         ),
+        if (hasDemoRoute) ...[
+          const SizedBox(height: 16),
+          const Text('샘플 경로는 고정되어 있으며 이동 옵션은 아직 적용되지 않습니다.'),
+          FilledButton.icon(
+            onPressed: widget.onShowRoute,
+            icon: const Icon(Icons.map_outlined),
+            label: const Text('지도에서 경로 보기'),
+          ),
+        ],
         const SizedBox(height: 24),
         Text('어떤 길로 갈까요?', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
@@ -109,10 +125,10 @@ class _RouteScreenState extends State<RouteScreen> {
             onTap: () => setState(() => _option = option),
           ),
         const SizedBox(height: 8),
-        if (destination == _start)
+        if (destination == start)
           const Text('출발지와 목적지를 다르게 선택해 주세요.')
-        else if (destination != null)
-          const Text('현재 데모에는 계산된 경로가 없습니다.'),
+        else if (destination != null && !hasDemoRoute)
+          const Text('이 출발지와 목적지 조합의 샘플 경로가 없습니다.'),
       ],
     );
   }

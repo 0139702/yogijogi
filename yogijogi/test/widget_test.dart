@@ -20,6 +20,19 @@ void main() {
 
     expect(find.text('6층 엘리베이터 앞'), findsOneWidget);
     expect(find.text('603호 프로그래밍 실습실 B'), findsOneWidget);
+
+    await tester.tap(find.text('지도에서 경로 보기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
+    await tester.tap(find.text('602호'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('지도에서 경로 보기'), findsNothing);
+    await tester.tap(find.text('지도'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
   });
 
   testWidgets('opens the reports tab without an API configuration', (

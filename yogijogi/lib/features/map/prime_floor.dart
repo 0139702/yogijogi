@@ -48,6 +48,23 @@ enum PrimePlace {
 }
 
 const primeCorridor = Rect.fromLTWH(.21, .40, .73, .17);
+
+List<Offset> primeDemoRoute(PrimePlace start, PrimePlace? destination) {
+  if (start != PrimePlace.elevator || destination != PrimePlace.room603) {
+    return const [];
+  }
+
+  final entrance = start.door;
+  final roomDoor = PrimePlace.room603.door;
+  final corridorY = primeCorridor.bottom - primeCorridor.height / 3;
+  return [
+    entrance,
+    Offset(entrance.dx, corridorY),
+    Offset(roomDoor.dx, corridorY),
+    roomDoor,
+  ];
+}
+
 const primeHall = Rect.fromLTWH(.05, .47, .17, .18);
 const primeStairs = [
   Rect.fromLTWH(.05, .11, .18, .19),

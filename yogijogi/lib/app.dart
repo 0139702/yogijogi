@@ -17,6 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final _api = ReportApi(AppConfig.apiBaseUrl);
   int _index = 0;
+  PrimePlace _start = PrimePlace.elevator;
   PrimePlace? _destination;
 
   @override
@@ -36,6 +37,7 @@ class _MyAppState extends State<MyApp> {
           index: _index,
           children: [
             MapScreen(
+              demoRoute: primeDemoRoute(_start, _destination),
               onDirections: () => setState(() => _index = 1),
               onPlaceSelected: (place) => setState(() {
                 _destination = place;
@@ -43,7 +45,10 @@ class _MyAppState extends State<MyApp> {
               }),
             ),
             RouteScreen(
+              start: _start,
               destination: _destination,
+              onStartChanged: (place) => setState(() => _start = place),
+              onShowRoute: () => setState(() => _index = 0),
               onDestinationChanged: (place) =>
                   setState(() => _destination = place),
             ),
