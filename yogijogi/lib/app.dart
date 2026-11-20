@@ -28,6 +28,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: '요기조기',
       theme: ThemeData(
+        fontFamily: 'Pretendard',
         colorSchemeSeed: AppColors.brand,
         scaffoldBackgroundColor: AppColors.background,
       ),
