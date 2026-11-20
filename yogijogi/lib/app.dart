@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'core/app_config.dart';
+import 'core/app_theme.dart';
 import 'features/map/map_screen.dart';
 import 'features/map/prime_floor.dart';
 import 'features/navigation/guidance.dart';
@@ -41,7 +42,7 @@ class _MyAppState extends State<MyApp> {
         : '샘플 경로 · 603호 → 엘리베이터 앞';
     return MaterialApp(
       title: '요기조기',
-      theme: ThemeData(colorSchemeSeed: const Color(0xff696fb8)),
+      theme: AppTheme.light,
       home: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
