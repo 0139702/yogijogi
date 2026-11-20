@@ -39,15 +39,33 @@ enum PrimePlace {
     '605호 디지털보안 실습실',
     Rect.fromLTWH(.27, .11, .31, .29),
     Offset(.43, .40),
-  );
+  ),
+  primeBuilding('프라임관', '프라임관'),
+  artsBuilding('조형관', '조형관');
 
-  const PrimePlace(this.mapLabel, this.label, this.bounds, this.door);
+  const PrimePlace(this.mapLabel, this.label, [this.bounds, this.door]);
 
   final String mapLabel;
   final String label;
-  final Rect bounds;
-  final Offset door;
+  final Rect? bounds;
+  final Offset? door;
+
+  String get detail => switch (this) {
+    primeBuilding || artsBuilding => '수정캠퍼스 · 건물',
+    _ => '프라임관 6층 · 층 안내도 기반 데모',
+  };
+
+  String get searchTerms => switch (this) {
+    primeBuilding => '공학 IT 프라임관 건물',
+    artsBuilding => '미술 디자인 조형관 조형1관 건물',
+    elevator => '프라임관 6층 엘리베이터 승강기',
+    _ => '프라임관 6층 강의실 실습실',
+  };
 }
+
+final primeFloorPlaces = PrimePlace.values
+    .where((place) => place.bounds != null)
+    .toList(growable: false);
 
 const primeCorridor = Rect.fromLTWH(.21, .40, .73, .17);
 
@@ -57,21 +75,24 @@ List<Offset> primeDemoRoute(
   RouteOption option,
 ) {
   // The floor guide does not confirm step-free access along the whole route.
-  if (option == RouteOption.stepFree ||
-      start != PrimePlace.elevator ||
-      destination != PrimePlace.room603) {
+  final forward =
+      start == PrimePlace.elevator && destination == PrimePlace.room603;
+  final reverse =
+      start == PrimePlace.room603 && destination == PrimePlace.elevator;
+  if (option == RouteOption.stepFree || (!forward && !reverse)) {
     return const [];
   }
 
-  final entrance = start.door;
-  final roomDoor = PrimePlace.room603.door;
+  final entrance = PrimePlace.elevator.door!;
+  final roomDoor = PrimePlace.room603.door!;
   final corridorY = primeCorridor.bottom - primeCorridor.height / 3;
-  return [
+  final points = [
     entrance,
     Offset(entrance.dx, corridorY),
     Offset(roomDoor.dx, corridorY),
     roomDoor,
   ];
+  return reverse ? points.reversed.toList() : points;
 }
 
 const primeHall = Rect.fromLTWH(.05, .47, .17, .18);

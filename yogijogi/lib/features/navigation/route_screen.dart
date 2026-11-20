@@ -14,6 +14,8 @@ class RouteScreen extends StatelessWidget {
     required this.onStartChanged,
     required this.onDestinationChanged,
     required this.onShowRoute,
+    required this.onStartGuidance,
+    required this.onSwap,
   });
 
   final PrimePlace start;
@@ -24,6 +26,8 @@ class RouteScreen extends StatelessWidget {
   final ValueChanged<PrimePlace> onStartChanged;
   final ValueChanged<PrimePlace> onDestinationChanged;
   final VoidCallback onShowRoute;
+  final VoidCallback onStartGuidance;
+  final VoidCallback onSwap;
 
   Widget _placeField({
     required String label,
@@ -70,22 +74,22 @@ class RouteScreen extends StatelessWidget {
           child: IconButton(
             tooltip: '출발지와 목적지 바꾸기',
             icon: const Icon(Icons.swap_vert),
-            onPressed: end == null
-                ? null
-                : () {
-                    onDestinationChanged(start);
-                    onStartChanged(end);
-                  },
+            onPressed: end == null ? null : onSwap,
           ),
         ),
         _placeField(label: '목적지', value: end, onChanged: onDestinationChanged),
+        if (end == null) const Text('안내받을 목적지를 선택해 주세요.'),
         if (hasDemoRoute) ...[
           const SizedBox(height: 16),
           const Text('이 구간은 같은 층이라 두 옵션 모두 같은 복도를 이용합니다.'),
-          FilledButton.icon(
+          OutlinedButton.icon(
             onPressed: onShowRoute,
             icon: const Icon(Icons.map_outlined),
             label: const Text('지도에서 경로 보기'),
+          ),
+          FilledButton(
+            onPressed: onStartGuidance,
+            child: const Text('이 경로로 안내 시작'),
           ),
         ],
         const SizedBox(height: 24),
