@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import '../navigation/route_option.dart';
+
 /// Approximate positions on the floor guide, in normalized map coordinates.
 enum PrimePlace {
   elevator(
@@ -49,8 +51,15 @@ enum PrimePlace {
 
 const primeCorridor = Rect.fromLTWH(.21, .40, .73, .17);
 
-List<Offset> primeDemoRoute(PrimePlace start, PrimePlace? destination) {
-  if (start != PrimePlace.elevator || destination != PrimePlace.room603) {
+List<Offset> primeDemoRoute(
+  PrimePlace start,
+  PrimePlace? destination,
+  RouteOption option,
+) {
+  // The floor guide does not confirm step-free access along the whole route.
+  if (option == RouteOption.stepFree ||
+      start != PrimePlace.elevator ||
+      destination != PrimePlace.room603) {
     return const [];
   }
 

@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'core/app_config.dart';
 import 'features/map/map_screen.dart';
 import 'features/map/prime_floor.dart';
+import 'features/navigation/route_option.dart';
 import 'features/navigation/route_screen.dart';
 import 'features/reports/report_api.dart';
 import 'features/reports/reports_screen.dart';
@@ -19,6 +20,7 @@ class _MyAppState extends State<MyApp> {
   int _index = 0;
   PrimePlace _start = PrimePlace.elevator;
   PrimePlace? _destination;
+  RouteOption _routeOption = RouteOption.shortest;
 
   @override
   void dispose() {
@@ -28,6 +30,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final demoRoute = primeDemoRoute(_start, _destination, _routeOption);
     return MaterialApp(
       title: '요기조기',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
@@ -37,7 +40,7 @@ class _MyAppState extends State<MyApp> {
           index: _index,
           children: [
             MapScreen(
-              demoRoute: primeDemoRoute(_start, _destination),
+              demoRoute: demoRoute,
               onDirections: () => setState(() => _index = 1),
               onPlaceSelected: (place) => setState(() {
                 _destination = place;
@@ -47,6 +50,10 @@ class _MyAppState extends State<MyApp> {
             RouteScreen(
               start: _start,
               destination: _destination,
+              option: _routeOption,
+              hasDemoRoute: demoRoute.isNotEmpty,
+              onOptionChanged: (option) =>
+                  setState(() => _routeOption = option),
               onStartChanged: (place) => setState(() => _start = place),
               onShowRoute: () => setState(() => _index = 0),
               onDestinationChanged: (place) =>
