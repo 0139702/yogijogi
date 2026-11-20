@@ -1,0 +1,7 @@
+{
+  "name": "yogijogi-backend",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": { "start": "node --env-file-if-exists=.env local.mjs" }
+}
