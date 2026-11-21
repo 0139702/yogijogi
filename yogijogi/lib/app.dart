@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'core/app_colors.dart';
 import 'core/app_config.dart';
 import 'features/map/map_screen.dart';
 import 'features/reports/report_api.dart';
@@ -26,7 +27,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '요기조기',
-      theme: ThemeData(colorSchemeSeed: Colors.teal),
+      theme: ThemeData(
+        fontFamily: 'Pretendard',
+        colorSchemeSeed: AppColors.brand,
+        scaffoldBackgroundColor: AppColors.background,
+      ),
       home: Scaffold(
         appBar: AppBar(title: Text(_index == 0 ? '캠퍼스 지도' : '제보')),
         body: _index == 0 ? const MapScreen() : ReportsScreen(api: _api),

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { handleMyReportRequest } from './my_reports.mjs';
 
 function respond(statusCode, body) {
   return {
@@ -38,6 +39,8 @@ export function createHandler(store, { environment, reportsEnabled }) {
     if (method === 'GET' && path === '/health') {
       return respond(200, { status: 'ok', environment, reportsEnabled });
     }
+    const myReportResponse = await handleMyReportRequest(method, path);
+    if (myReportResponse) return myReportResponse;
     const match = /^\/reports(?:\/([a-f0-9-]{36}))?$/.exec(path);
     if (!match) return respond(404, { error: 'not_found' });
     if (!reportsEnabled) return respond(403, { error: 'reports_disabled' });
