@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: YogiJogi shared development backend
+
+Parameters:
+  EnableDemoReports:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: '$default'
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      CodeUri: src/
+      Handler: index.handler
+      Timeout: 10
+      Environment:
+        Variables:
+          REPORTS_TABLE: !Ref ReportsTable
+          ENABLE_DEMO_REPORTS: !Ref EnableDemoReports
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: !GetAtt ReportsTable.Arn
+      Events:
+        Health:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /health, Method: GET }
+        ListReports:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /reports, Method: GET }
+        CreateReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /reports, Method: POST }
+        GetReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: GET }
+        UpdateReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: PUT }
+
+  ReportsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey: { Name: id, Type: String }
+  EventsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey: { Name: id, Type: String }
+  ClassroomsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey: { Name: id, Type: String }
+
+Outputs:
+  ApiBaseUrl:
+    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
