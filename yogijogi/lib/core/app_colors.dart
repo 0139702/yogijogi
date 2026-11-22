@@ -18,6 +18,15 @@ abstract final class AppColors {
   static const resolved = Color(0xFF4F8A70);
 }
 
+/// Campus home accents from the supplied campus UI mockup.
+abstract final class CampusHomeColors {
+  static const blue = Color(0xff347dff);
+  static const blueStrong = Color(0xff075bbb);
+  static const blueSoft = Color(0xffedf3ff);
+  static const header = Color(0xfff3f4f2);
+  static const wordmark = Color(0xff102032);
+}
+
 abstract final class AppTextStyles {
   static const fontFamily = 'Pretendard';
 

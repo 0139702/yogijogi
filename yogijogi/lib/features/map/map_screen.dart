@@ -48,6 +48,13 @@ class _MapScreenState extends State<MapScreen> {
   Future<void>? _recentLoaded;
   Future<void> _pendingSave = Future.value();
   PlaceFilter _filter = PlaceFilter.all;
+  final _mapTransform = TransformationController();
+
+  @override
+  void dispose() {
+    _mapTransform.dispose();
+    super.dispose();
+  }
 
   SharedPreferencesAsync? _openPreferences() {
     try {
@@ -84,15 +91,15 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _openSearch(BuildContext context) async {
     await (_recentLoaded ??= _loadRecent());
     if (!context.mounted) return;
-    final place = await showModalBottomSheet<PrimePlace>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => PlaceSearch(
-        recent: _recent,
-        onClearRecent: () {
-          _recent.clear();
-          _saveRecent();
-        },
+    final place = await Navigator.of(context).push(
+      MaterialPageRoute<PrimePlace>(
+        builder: (_) => PlaceSearch(
+          recent: _recent,
+          onClearRecent: () {
+            _recent.clear();
+            _saveRecent();
+          },
+        ),
       ),
     );
     if (place == null || !context.mounted) return;
@@ -138,6 +145,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final step = widget.guideStep;
+    if (step == null) return _buildHome(context);
     final destination = widget.destination;
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -147,12 +155,11 @@ class _MapScreenState extends State<MapScreen> {
         24,
       ),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
           children: [
             Text('프라임관 6층', style: AppTextStyles.title),
-            const SizedBox(width: 8),
             Text('층 안내도 기반 데모', style: AppTextStyles.caption),
           ],
         ),
@@ -161,21 +168,15 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Expanded(child: _SearchBar(onTap: () => _openSearch(context))),
             const SizedBox(width: AppSpacing.elementGapHorizontal),
-            OutlinedButton.icon(
+            IconButton.filledTonal(
+              tooltip: '길찾기 열기',
               onPressed: widget.onDirections,
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
               icon: const Icon(Icons.turn_right),
-              label: const Text('길찾기 열기'),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (step != null && destination != null)
+        if (destination != null)
           Card(
             margin: EdgeInsets.zero,
             child: Column(
@@ -201,40 +202,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
-          )
-        else ...[
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final filter in PlaceFilter.values)
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      right: AppSpacing.elementGapHorizontal,
-                    ),
-                    child: FilterChip(
-                      avatar: Icon(
-                        filter.icon,
-                        size: 16,
-                        color: _filter == filter
-                            ? AppColors.brandStrong
-                            : AppColors.brand,
-                      ),
-                      showCheckmark: false,
-                      label: Text(filter.label),
-                      selected: _filter == filter,
-                      onSelected: (_) => setState(() => _filter = filter),
-                    ),
-                  ),
-              ],
-            ),
           ),
-          if (_filter != PlaceFilter.all && _filter != PlaceFilter.elevator)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(_filter.emptyMessage, style: AppTextStyles.caption),
-            ),
-        ],
         const SizedBox(height: 8),
         if (widget.routeLabel != null)
           Padding(
@@ -251,41 +219,211 @@ class _MapScreenState extends State<MapScreen> {
             padding: const EdgeInsets.all(8),
             child: PrimeFloorView(
               route: widget.demoRoute,
-              highlightedPlace: _filter == PlaceFilter.elevator
-                  ? PrimePlace.elevator
-                  : null,
-              guidePosition: step == null ? null : widget.demoRoute[step],
+              guidePosition: widget.demoRoute[step],
               onPlaceSelected: (place) => _openPlace(context, place),
             ),
           ),
         ),
-        if (step != null) ...[
-          const SizedBox(height: 16),
-          _GuidancePanel(
-            step: step,
-            lastStep: widget.demoRoute.length - 1,
-            route: widget.demoRoute,
-            view: widget.view,
-            onViewChanged: widget.onViewChanged,
-            onStepChanged: widget.onStepChanged,
-            onEnd: widget.onEndGuidance,
+        const SizedBox(height: 16),
+        _GuidancePanel(
+          step: step,
+          lastStep: widget.demoRoute.length - 1,
+          route: widget.demoRoute,
+          view: widget.view,
+          onViewChanged: widget.onViewChanged,
+          onStepChanged: widget.onStepChanged,
+          onEnd: widget.onEndGuidance,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHome(BuildContext context) {
+    const filters = {
+      PlaceFilter.all: '전체',
+      PlaceFilter.classrooms: '빈 강의실',
+      PlaceFilter.events: '행사',
+      PlaceFilter.reports: '벌레 주의',
+    };
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(
+          color: AppColors.background,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 132, 12, 72),
+            child: InteractiveViewer(
+              transformationController: _mapTransform,
+              minScale: 1,
+              maxScale: 3,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('프라임관 6층', style: AppTextStyles.title),
+                    const SizedBox(height: 4),
+                    Text('층 안내도 기반 데모', style: AppTextStyles.caption),
+                    if (widget.routeLabel != null)
+                      _RouteBadge(label: widget.routeLabel!),
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: PrimeFloorView(
+                        route: widget.demoRoute,
+                        onPlaceSelected: (place) => _openPlace(context, place),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
+        Positioned(
+          top: 16,
+          left: 16,
+          right: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _SearchBar(
+                      onTap: () => _openSearch(context),
+                      home: true,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _MapControl(
+                    tooltip: '길찾기 열기',
+                    icon: Icons.turn_right,
+                    color: Colors.black,
+                    size: 54,
+                    iconSize: 32,
+                    onPressed: widget.onDirections,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    for (final entry in filters.entries)
+                      Semantics(
+                        selected: _filter == entry.key,
+                        child: Material(
+                          color: AppColors.surface,
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: _filter == entry.key
+                                  ? CampusHomeColors.blue
+                                  : Colors.transparent,
+                            ),
+                          ),
+                          child: InkWell(
+                            customBorder: const StadiumBorder(),
+                            onTap: () => setState(() => _filter = entry.key),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 40),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    entry.value,
+                                    style: AppTextStyles.body.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (_filter != PlaceFilter.all)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _filter.emptyMessage,
+                    style: AppTextStyles.caption,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 24,
+          child: _MapControl(
+            tooltip: '지도 중심으로 이동',
+            icon: Icons.my_location,
+            color: CampusHomeColors.blue,
+            size: 48,
+            iconSize: 24,
+            onPressed: () => _mapTransform.value = Matrix4.identity(),
+          ),
+        ),
       ],
     );
   }
 }
 
+class _MapControl extends StatelessWidget {
+  const _MapControl({
+    required this.tooltip,
+    required this.icon,
+    required this.color,
+    required this.size,
+    required this.iconSize,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final Color color;
+  final double size;
+  final double iconSize;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, size: iconSize),
+        style: IconButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          foregroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.onTap});
+  const _SearchBar({required this.onTap, this.home = false});
 
   final VoidCallback onTap;
+  final bool home;
 
   @override
   Widget build(BuildContext context) {
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-      side: const BorderSide(color: AppColors.border),
+      borderRadius: BorderRadius.circular(home ? 20 : 16),
+      side: home ? BorderSide.none : const BorderSide(color: AppColors.border),
     );
     return Material(
       color: AppColors.surface,
@@ -293,21 +431,30 @@ class _SearchBar extends StatelessWidget {
       child: InkWell(
         customBorder: shape,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              const Icon(Icons.search, color: AppColors.brand),
-              const SizedBox(width: AppSpacing.elementGapHorizontal),
-              Expanded(
-                child: Text(
-                  '건물·강의실 검색',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: home ? 54 : 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search,
+                  color: home ? CampusHomeColors.blue : AppColors.brand,
+                ),
+                const SizedBox(width: AppSpacing.elementGapHorizontal),
+                Expanded(
+                  child: Text(
+                    home ? '건물명, 강의실 검색' : '건물·강의실 검색',
+                    semanticsLabel: '건물·강의실 검색',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -408,7 +555,8 @@ class _GuidancePanel extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(instruction, style: AppTextStyles.title),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       for (var index = 0; index <= lastStep; index++)
                         IconButton(
@@ -425,7 +573,6 @@ class _GuidancePanel extends StatelessWidget {
                           ),
                           onPressed: () => onStepChanged(index),
                         ),
-                      const Spacer(),
                       TextButton.icon(
                         icon: const Icon(Icons.zoom_in),
                         label: const Text('안내도 확대'),

@@ -32,130 +32,160 @@ class RouteScreen extends StatelessWidget {
 
   Widget _placeField({
     required String label,
+    required Color color,
     required PrimePlace? value,
     required ValueChanged<PrimePlace> onChanged,
   }) {
-    return InputDecorator(
-      decoration: InputDecoration(labelText: label),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<PrimePlace>(
-          isExpanded: true,
-          isDense: true,
-          value: value,
-          hint: const Text('장소 선택'),
-          onChanged: (place) {
-            if (place != null) onChanged(place);
-          },
-          items: [
-            for (final place in PrimePlace.values)
-              DropdownMenuItem(value: place, child: Text(place.label)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final end = destination;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        16,
-        AppSpacing.screenPadding,
-        24,
-      ),
+    return Row(
       children: [
-        Text('프라임관 6층 · 도면 기반 데모', style: AppTextStyles.title),
-        const SizedBox(height: 12),
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _placeField(
-                  label: '출발지',
-                  value: start,
-                  onChanged: onStartChanged,
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    tooltip: '출발지와 목적지 바꾸기',
-                    color: AppColors.brand,
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.swap_vert),
-                    onPressed: end == null ? null : onSwap,
-                  ),
-                ),
-                _placeField(
-                  label: '목적지',
-                  value: end,
-                  onChanged: onDestinationChanged,
-                ),
-                if (end == null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
+        Icon(Icons.circle, size: 12, color: color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<PrimePlace>(
+              isExpanded: true,
+              isDense: true,
+              value: value,
+              hint: const Text('장소 선택'),
+              onChanged: (place) {
+                if (place != null) onChanged(place);
+              },
+              items: [
+                for (final place in PrimePlace.values)
+                  DropdownMenuItem(
+                    value: place,
                     child: Text(
-                      '안내받을 목적지를 선택해 주세요.',
-                      style: AppTextStyles.caption,
+                      place.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
               ],
             ),
           ),
         ),
-        if (hasDemoRoute) ...[
-          const SizedBox(height: 16),
-          const _Notice(
-            icon: Icons.info_outline,
-            text: '이 구간은 같은 층이라 두 옵션 모두 같은 복도를 이용합니다.',
-          ),
-          const SizedBox(height: 12),
-          Row(
+        const SizedBox(width: 6),
+        Text(label, style: AppTextStyles.caption.copyWith(color: color)),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final end = destination;
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              16,
+              AppSpacing.screenPadding,
+              24,
+            ),
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
+              Text('프라임관 6층 · 도면 기반 데모', style: AppTextStyles.title),
+              const SizedBox(height: 12),
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _placeField(
+                              label: '출발지',
+                              color: AppColors.brandStrong,
+                              value: start,
+                              onChanged: onStartChanged,
+                            ),
+                            const Divider(height: 16),
+                            _placeField(
+                              label: '목적지',
+                              color: AppColors.textPrimary,
+                              value: end,
+                              onChanged: onDestinationChanged,
+                            ),
+                            if (end == null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '안내받을 목적지를 선택해 주세요.',
+                                  style: AppTextStyles.caption,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        tooltip: '출발지와 목적지 바꾸기',
+                        icon: const Icon(Icons.swap_vert),
+                        onPressed: end == null ? null : onSwap,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (hasDemoRoute) ...[
+                const SizedBox(height: 16),
+                const _Notice(
+                  icon: Icons.info_outline,
+                  text: '이 구간은 같은 층이라 두 옵션 모두 같은 복도를 이용합니다.',
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text('어떤 길로 갈까요?', style: AppTextStyles.title),
+              const SizedBox(height: 8),
+              for (final candidate in RouteOption.values)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _OptionTile(
+                    option: candidate,
+                    selected: option == candidate,
+                    onTap: () => onOptionChanged(candidate),
+                  ),
+                ),
+              if (end == start)
+                const _Notice(
+                  icon: Icons.error_outline,
+                  text: '출발지와 목적지를 다르게 선택해 주세요.',
+                )
+              else if (end != null && !hasDemoRoute)
+                _Notice(
+                  icon: Icons.error_outline,
+                  text: option == RouteOption.stepFree
+                      ? '확인된 계단 없는 경로가 없습니다.'
+                      : '이 출발지와 목적지 조합의 샘플 경로가 없습니다.',
+                ),
+            ],
+          ),
+        ),
+        if (hasDemoRoute)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              4,
+              AppSpacing.screenPadding,
+              8,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextButton.icon(
                   onPressed: onShowRoute,
                   icon: const Icon(Icons.map_outlined),
                   label: const Text('지도에서 경로 보기'),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.elementGapHorizontal),
-              Expanded(
-                child: FilledButton(
+                FilledButton(
                   onPressed: onStartGuidance,
                   child: const Text('이 경로로 안내 시작'),
                 ),
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 16),
-        Text('어떤 길로 갈까요?', style: AppTextStyles.title),
-        const SizedBox(height: 8),
-        for (final candidate in RouteOption.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _OptionTile(
-              option: candidate,
-              selected: option == candidate,
-              onTap: () => onOptionChanged(candidate),
+              ],
             ),
-          ),
-        if (end == start)
-          const _Notice(
-            icon: Icons.error_outline,
-            text: '출발지와 목적지를 다르게 선택해 주세요.',
-          )
-        else if (end != null && !hasDemoRoute)
-          _Notice(
-            icon: Icons.error_outline,
-            text: option == RouteOption.stepFree
-                ? '확인된 계단 없는 경로가 없습니다.'
-                : '이 출발지와 목적지 조합의 샘플 경로가 없습니다.',
           ),
       ],
     );

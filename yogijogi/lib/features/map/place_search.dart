@@ -55,100 +55,118 @@ class _PlaceSearchState extends State<PlaceSearch> {
       final searchable = '${place.label} ${place.searchTerms}'.toLowerCase();
       return _filter.includes(place) && terms.every(searchable.contains);
     }).toList();
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .48,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search, color: AppColors.brand),
-                    labelText: '건물명이나 호실 검색',
-                    hintText: '예: 미술, 공학, 603',
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: '검색 닫기',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
                   ),
-                  onChanged: (value) => setState(() {
-                    _query = value.trim().toLowerCase();
-                    _filter = PlaceFilter.all;
-                  }),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search, color: AppColors.brand),
+                        labelText: '건물명이나 호실 검색',
+                        hintText: '예: 미술, 공학, 603',
+                      ),
+                      onChanged: (value) =>
+                          setState(() => _query = value.trim().toLowerCase()),
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    if (showSuggestions) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('최근 검색', style: AppTextStyles.title),
-                          if (widget.recent.isNotEmpty)
-                            TextButton(
-                              onPressed: () => setState(widget.onClearRecent),
-                              child: const Text('모두 지우기'),
-                            ),
-                        ],
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  if (showSuggestions) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('최근 검색', style: AppTextStyles.title),
+                        if (widget.recent.isNotEmpty)
+                          TextButton(
+                            onPressed: () => setState(widget.onClearRecent),
+                            child: const Text('모두 지우기'),
+                          ),
+                      ],
+                    ),
+                    if (widget.recent.isEmpty)
+                      Text('최근 검색이 없습니다.', style: AppTextStyles.caption),
+                    for (final place in widget.recent)
+                      ListTile(
+                        leading: const Icon(Icons.history),
+                        title: Text(place.label),
+                        onTap: () => Navigator.pop(context, place),
                       ),
-                      if (widget.recent.isEmpty)
-                        Text('최근 검색이 없습니다.', style: AppTextStyles.caption),
-                      for (final place in widget.recent)
-                        ListTile(
-                          leading: const Icon(Icons.history),
-                          title: Text(place.label),
-                          onTap: () => Navigator.pop(context, place),
-                        ),
-                      const SizedBox(height: 12),
-                      Text('빠른 검색', style: AppTextStyles.title),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: AppSpacing.elementGapHorizontal,
-                        runSpacing: 8,
-                        children: [
-                          for (final filter in PlaceFilter.values.skip(1))
-                            ActionChip(
-                              avatar: Icon(
-                                filter.icon,
-                                size: 16,
-                                color: AppColors.brand,
+                    const SizedBox(height: 12),
+                    Text('빠른 검색', style: AppTextStyles.title),
+                    const SizedBox(height: 8),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const gap = AppSpacing.elementGapHorizontal;
+                        final width = constraints.maxWidth < 300
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - gap) / 2;
+                        return Wrap(
+                          spacing: gap,
+                          runSpacing: 8,
+                          children: [
+                            for (final filter in PlaceFilter.values.skip(1))
+                              SizedBox(
+                                width: width,
+                                child: OutlinedButton(
+                                  onPressed: () =>
+                                      setState(() => _filter = filter),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        filter.icon,
+                                        size: 20,
+                                        color: AppColors.brand,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(child: Text(filter.label)),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              label: Text(filter.label),
-                              onPressed: () => setState(() => _filter = filter),
-                            ),
-                        ],
+                          ],
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    if (_filter != PlaceFilter.all)
+                      InputChip(
+                        label: Text(_filter.label),
+                        onDeleted: () =>
+                            setState(() => _filter = PlaceFilter.all),
                       ),
-                    ] else ...[
-                      if (_filter != PlaceFilter.all)
-                        InputChip(
-                          label: Text(_filter.label),
-                          onDeleted: () =>
-                              setState(() => _filter = PlaceFilter.all),
-                        ),
-                      if (places.isEmpty)
-                        Text(
-                          _filter.emptyMessage,
+                    if (places.isEmpty)
+                      Text(_filter.emptyMessage, style: AppTextStyles.caption),
+                    for (final place in places)
+                      ListTile(
+                        leading: const Icon(Icons.place_outlined),
+                        title: Text(place.label, style: AppTextStyles.body),
+                        subtitle: Text(
+                          place.detail,
                           style: AppTextStyles.caption,
                         ),
-                      for (final place in places)
-                        ListTile(
-                          leading: const Icon(Icons.place_outlined),
-                          title: Text(place.label, style: AppTextStyles.body),
-                          subtitle: Text(
-                            place.detail,
-                            style: AppTextStyles.caption,
-                          ),
-                          onTap: () => Navigator.pop(context, place),
-                        ),
-                    ],
+                        onTap: () => Navigator.pop(context, place),
+                      ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

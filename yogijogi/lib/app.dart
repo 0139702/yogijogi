@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'core/app_config.dart';
+import 'core/app_colors.dart';
 import 'core/app_theme.dart';
 import 'features/map/map_screen.dart';
 import 'features/map/prime_floor.dart';
@@ -35,6 +36,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final demoRoute = primeDemoRoute(_start, _destination, _routeOption);
+    final isMapHome = _index == 0 && _guideStep == null;
     final routeLabel = demoRoute.isEmpty
         ? null
         : _start == PrimePlace.elevator
@@ -46,17 +48,29 @@ class _MyAppState extends State<MyApp> {
       home: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: Text(['요기조기', '길찾기', '제보', '마이'][_index]),
+            backgroundColor: isMapHome ? CampusHomeColors.header : null,
+            toolbarHeight: isMapHome ? 64 : null,
+            titleSpacing: isMapHome ? 16 : null,
+            title: _index == 0
+                ? (isMapHome ? const _CampusTitle() : const Text('요기조기'))
+                : Text(['요기조기', '길찾기', '제보', '마이'][_index]),
             actions: [
               if (_index == 0)
-                IconButton(
-                  tooltip: '알림',
-                  icon: const Icon(Icons.notifications_none),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('알림')),
-                        body: const Center(child: Text('받은 알림이 없습니다.')),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: IconButton.filledTonal(
+                    style: IconButton.styleFrom(
+                      backgroundColor: CampusHomeColors.blueSoft,
+                      foregroundColor: AppColors.textPrimary,
+                    ),
+                    tooltip: '알림',
+                    icon: const Icon(Icons.notifications_none),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => Scaffold(
+                          appBar: AppBar(title: const Text('알림')),
+                          body: const Center(child: Text('받은 알림이 없습니다.')),
+                        ),
                       ),
                     ),
                   ),
@@ -168,6 +182,53 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CampusTitle extends StatelessWidget {
+  const _CampusTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const CircleAvatar(
+          radius: 18,
+          backgroundColor: CampusHomeColors.blueStrong,
+          foregroundColor: Colors.white,
+          child: Icon(Icons.explore_outlined, size: 21),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'SUNGSHIN WOMEN’S UNIVERSITY',
+                style: AppTextStyles.caption.copyWith(
+                  color: CampusHomeColors.blueStrong,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .25,
+                  height: 1.15,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'YogiJogi',
+                semanticsLabel: '요기조기',
+                style: AppTextStyles.title.copyWith(
+                  color: CampusHomeColors.wordmark,
+                  fontSize: 20,
+                  height: 1.05,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

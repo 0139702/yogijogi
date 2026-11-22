@@ -3,9 +3,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yogijogi/app.dart';
 
 void main() {
+  testWidgets('opens full-screen quick search and returns to the floor map', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 740));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const MyApp());
+    expect(find.text('SUNGSHIN WOMEN’S UNIVERSITY'), findsOneWidget);
+    expect(find.text('YogiJogi'), findsOneWidget);
+    await tester.tap(find.byTooltip('지도 중심으로 이동'));
+    await tester.tap(find.text('빈 강의실'));
+    await tester.pumpAndSettle();
+    expect(find.text('빈 강의실을 확인할 수 있는 시간표가 없습니다.'), findsOneWidget);
+    await tester.tap(find.text('전체'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('건물명, 강의실 검색'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('검색 닫기'), findsOneWidget);
+    expect(find.text('빠른 검색'), findsOneWidget);
+    await tester.tap(find.text('빈 강의실'));
+    await tester.pumpAndSettle();
+    expect(find.text('빈 강의실을 확인할 수 있는 시간표가 없습니다.'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('검색 닫기'));
+    await tester.pumpAndSettle();
+    expect(find.text('프라임관 6층'), findsOneWidget);
+  });
+
   testWidgets('opens indoor route setup from the map tab', (tester) async {
     await tester.pumpWidget(const MyApp());
-    await tester.tap(find.text('길찾기 열기'));
+    await tester.tap(find.byTooltip('길찾기 열기'));
     await tester.pumpAndSettle();
 
     expect(find.text('프라임관 6층 · 도면 기반 데모'), findsOneWidget);
@@ -19,7 +47,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const MyApp());
-    final searchButton = find.text('건물·강의실 검색');
+    final searchButton = find.text('건물명, 강의실 검색');
     await tester.tap(searchButton);
     await tester.pumpAndSettle();
     expect(find.text('최근 검색'), findsOneWidget);
@@ -105,7 +133,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
 
-    await tester.tap(find.text('길찾기 열기'));
+    await tester.tap(find.byTooltip('길찾기 열기'));
     await tester.pumpAndSettle();
     final elevator = find.text('엘리베이터 우선');
     await tester.scrollUntilVisible(elevator, -100);
@@ -124,7 +152,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MyApp());
-    await tester.tap(find.text('건물·강의실 검색'));
+    await tester.tap(find.text('건물명, 강의실 검색'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), '603');
     await tester.pumpAndSettle();
