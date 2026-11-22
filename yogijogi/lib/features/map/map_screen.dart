@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_colors.dart';
 import '../navigation/guidance.dart';
+import 'campus_3d_screen.dart';
 import 'place_search.dart';
 import 'prime_floor.dart';
 import 'prime_floor_view.dart';
@@ -262,6 +263,15 @@ class _MapScreenState extends State<MapScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('프라임관 6층', style: AppTextStyles.title),
+                    TextButton.icon(
+                      icon: const Icon(Icons.view_in_ar_outlined),
+                      label: const Text('캠퍼스 3D 지도'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const Campus3dScreen(),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text('층 안내도 기반 데모', style: AppTextStyles.caption),
                     if (widget.routeLabel != null)
