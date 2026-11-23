@@ -92,6 +92,11 @@ class RouteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final end = destination;
+    final recommendElevator = primeDemoRoute(
+      start,
+      end,
+      RouteOption.elevator,
+    ).isNotEmpty;
     return ColoredBox(
       color: const Color(0xffeaf5f2),
       child: SafeArea(
@@ -218,7 +223,7 @@ class RouteScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              '프라임관 6층 · 도면 기반 데모',
+                              '프라임관 6층 · 도면 기준',
                               style: AppTextStyles.caption,
                             ),
                             const SizedBox(height: 16),
@@ -230,6 +235,9 @@ class RouteScreen extends StatelessWidget {
                                   index: index,
                                   option: candidate,
                                   selected: option == candidate,
+                                  recommended:
+                                      recommendElevator &&
+                                      candidate == RouteOption.elevator,
                                   onTap: () => onOptionChanged(candidate),
                                 ),
                               ),
@@ -241,7 +249,7 @@ class RouteScreen extends StatelessWidget {
                               _Notice(
                                 option == RouteOption.stepFree
                                     ? '확인된 계단 없는 경로가 없습니다.'
-                                    : '이 출발지와 목적지 조합의 샘플 경로가 없습니다.',
+                                    : '안내할 수 있는 경로가 없습니다.',
                               ),
                             if (hasDemoRoute)
                               const _Notice(
@@ -289,12 +297,14 @@ class _OptionTile extends StatelessWidget {
     required this.index,
     required this.option,
     required this.selected,
+    required this.recommended,
     required this.onTap,
   });
 
   final int index;
   final RouteOption option;
   final bool selected;
+  final bool recommended;
   final VoidCallback onTap;
 
   @override
@@ -336,11 +346,41 @@ class _OptionTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 4,
                     children: [
-                      Text(
-                        option.label,
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  option.label,
+                                  style: AppTextStyles.body.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (option == RouteOption.stepFree)
+                                  const Icon(
+                                    Icons.accessible,
+                                    size: 18,
+                                    color: AppColors.brandStrong,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (recommended) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '추천',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.brandStrong,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       Text(option.description, style: AppTextStyles.caption),
                     ],

@@ -58,7 +58,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       children: [
         const ListTile(
           title: Text('개발용 제보'),
-          subtitle: Text('샘플 데이터만 사용해 주세요.'),
+          subtitle: Text('테스트용 제보만 등록해 주세요.'),
         ),
         Wrap(
           spacing: 12,

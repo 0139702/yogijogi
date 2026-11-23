@@ -38,13 +38,14 @@ const campusPlaces = {
   sungshin_hall: ['sungshinHall', '성신관'],
   campus_museum: ['campusMuseum', '박물관'],
   sujeong_hall_a: ['sujeongHallA', '수정관 A동'],
+  campus_structure_05: ['primeBuilding', '프라임관'],
   sujeong_hall_b: ['sujeongHallB', '수정관 B동'],
   sujeong_hall_c: ['sujeongHallC', '수정관 C동'],
   central_library: ['centralLibrary', '중앙도서관'],
   sungshin_annex: ['sungshinAnnex', '성신별관'],
 };
 
-const sampleMarkers = [
+const statusMarkers = [
   ['johyeong_hall_1', ['classrooms', 'events'], '조형1관 · 수업 중 · 행사 중'],
   ['central_library', ['events'], '중앙도서관 · 행사 중'],
   ['sungshin_hall', ['reports'], '성신관 · 벌레 주의'],
@@ -205,18 +206,21 @@ function start(rooms, corridor, initialIndoor, initialFilter, initialActive, mea
     const bounds = new Box3().setFromObject(mesh);
     const anchor = bounds.getCenter(new Vector3());
     anchor.y = bounds.max.y + .12;
-    labels.push({ marker, anchor, categories });
+    labels.push({ marker, anchor, categories, indoorMarker: mesh.parent === indoor });
   }
   for (const room of rooms) {
     addMarker(indoor.getObjectByName(room.id), room.id, room.label);
   }
-  for (const [object, categories, label] of sampleMarkers) {
-    addMarker(campusSource.getObjectByName(object), campusPlaces[object][0], label + ' · 샘플', categories);
+
+  for (const [object, categories, label] of statusMarkers) {
+    addMarker(campusSource.getObjectByName(object), campusPlaces[object][0], label, categories);
   }
+  const [primeId, primeLabel] = campusPlaces.campus_structure_05;
+  addMarker(campusSource.getObjectByName('campus_structure_05'), primeId, primeLabel);
 
   let inside = false;
-  let active = true;
   let filter = 'all';
+  let active = true;
   let span;
   let dirty = true;
   let flight;
@@ -397,10 +401,11 @@ function start(rooms, corridor, initialIndoor, initialFilter, initialActive, mea
       });
     }
     dirty = false;
-    for (const { marker, anchor, categories } of labels) {
+    for (const { marker, anchor, categories, indoorMarker } of labels) {
       projected.copy(anchor).project(camera);
       marker.hidden = Math.abs(projected.x) >= .98 || Math.abs(projected.y) >= .98 ||
-        (inside ? categories.length > 0 : categories.length === 0 || (filter !== 'all' && !categories.includes(filter)));
+        inside !== indoorMarker ||
+        (categories.length > 0 && filter !== 'all' && !categories.includes(filter));
       if (!marker.hidden) {
         marker.style.left = (projected.x + 1) * 50 + '%';
         marker.style.top = (1 - projected.y) * 50 + '%';

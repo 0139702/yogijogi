@@ -58,7 +58,7 @@ enum PrimePlace {
   final Rect? bounds;
   final Offset? door;
 
-  String get detail => bounds == null ? '수정캠퍼스 · 건물' : '프라임관 6층 · 층 안내도 기반 데모';
+  String get detail => bounds == null ? '수정캠퍼스 · 건물' : '프라임관 6층 · 층 안내도 기준';
 
   String get searchTerms => switch (this) {
     primeBuilding => '공학 IT 프라임관 건물',

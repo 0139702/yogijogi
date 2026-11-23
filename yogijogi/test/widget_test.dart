@@ -47,7 +47,7 @@ void main() {
     await tester.tap(find.byTooltip('길찾기 열기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('프라임관 6층 · 도면 기반 데모'), findsOneWidget);
+    expect(find.text('프라임관 6층 · 도면 기준'), findsOneWidget);
     expect(find.text('출발지'), findsOneWidget);
     expect(find.text('목적지'), findsOneWidget);
     final startButton = find.widgetWithText(FilledButton, '이 경로로 안내 시작');
@@ -56,7 +56,9 @@ void main() {
     await tester.scrollUntilVisible(find.text('안내받을 목적지를 선택해 주세요.'), 150);
     await tester.pumpAndSettle();
     expect(find.text('안내받을 목적지를 선택해 주세요.'), findsOneWidget);
-    expect(find.text('계단 없는 경로'), findsOneWidget);
+    expect(find.text('유니버셜 로드'), findsOneWidget);
+    expect(find.byIcon(Icons.accessible), findsOneWidget);
+    expect(find.text('추천'), findsNothing);
   }, variant: desktop);
 
   testWidgets('searches building tags and clears recent place selections', (
@@ -111,7 +113,7 @@ void main() {
     await tester.tap(find.byTooltip('지도에서 경로 보기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
+    expect(find.text('경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
     await tester.tap(find.text('602호'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('목적지로 설정'));
@@ -131,7 +133,7 @@ void main() {
     await tester.tap(find.text('지도'));
     await tester.pumpAndSettle();
 
-    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
+    expect(find.text('경로 · 엘리베이터 앞 → 603호'), findsNothing);
   }, variant: desktop);
 
   testWidgets('opens the reports tab without an API configuration', (
@@ -164,7 +166,13 @@ void main() {
     await tester.tap(find.text('목적지로 설정'));
     await tester.pumpAndSettle();
 
-    final stepFree = find.text('계단 없는 경로');
+    expect(find.text('추천'), findsOneWidget);
+    final recommendation = tester.getRect(find.text('추천'));
+    final title = tester.getRect(find.text('엘리베이터 우선'));
+    final description = tester.getRect(find.text('엘리베이터를 우선하며 계단이 포함될 수 있음'));
+    expect(recommendation.left, greaterThan(title.right));
+    expect(recommendation.top, lessThan(description.top));
+    final stepFree = find.text('유니버셜 로드');
     await tester.scrollUntilVisible(stepFree, 150);
     await tester.pumpAndSettle();
     await tester.tap(stepFree);
@@ -176,7 +184,7 @@ void main() {
 
     await tester.tap(find.text('지도'));
     await tester.pumpAndSettle();
-    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
+    expect(find.text('경로 · 엘리베이터 앞 → 603호'), findsNothing);
 
     await tester.tap(find.byTooltip('길찾기 열기'));
     await tester.pumpAndSettle();
@@ -190,7 +198,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(showRoute);
     await tester.pumpAndSettle();
-    expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
+    expect(find.text('경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
   }, variant: desktop);
 
   testWidgets('confirms a search result, swaps endpoints and runs guidance', (
@@ -214,31 +222,36 @@ void main() {
     await tester.tap(find.text('이 경로로 안내 시작'));
     await tester.pumpAndSettle();
 
-    expect(find.text('샘플 경로 · 603호 → 엘리베이터 앞'), findsOneWidget);
+    expect(find.text('603호 프로그래밍 실습실 B'), findsOneWidget);
+    expect(find.byTooltip('길찾기 열기'), findsNothing);
+    expect(find.text('건물명, 강의실, 또는 제보 검색'), findsNothing);
+    expect(find.text('이전 단계'), findsNothing);
+    expect(find.text('다음 단계'), findsNothing);
     expect(find.text('출발'), findsOneWidget);
     expect(find.text('도착'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -350));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -150));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('다음 단계'));
+    await tester.tap(find.byTooltip('2단계로 이동'));
     await tester.pumpAndSettle();
-    expect(find.text('데모 안내 · 2/4'), findsOneWidget);
+    expect(find.text('안내 · 2/4'), findsOneWidget);
     final card = find.byKey(const ValueKey('guidance-step-card'));
     await tester.ensureVisible(card);
     await tester.fling(card, const Offset(-160, 0), 700);
     await tester.pumpAndSettle();
-    expect(find.text('데모 안내 · 3/4'), findsOneWidget);
+    expect(find.text('안내 · 3/4'), findsOneWidget);
     final preview = find.text('안내도 확대');
     await tester.ensureVisible(preview);
     await tester.tap(preview);
     await tester.pumpAndSettle();
-    expect(find.text('층 안내도 · 데모'), findsOneWidget);
+    expect(find.text('층 안내도'), findsOneWidget);
     await tester.tap(find.text('닫기'));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('안내 종료'));
+    await tester.ensureVisible(find.byTooltip('안내 종료'));
+    await tester.tap(find.byTooltip('안내 종료'));
     await tester.pumpAndSettle();
     expect(find.text('출발지'), findsOneWidget);
   }, variant: desktop);

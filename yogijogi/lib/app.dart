@@ -34,18 +34,17 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final demoRoute = primeDemoRoute(_start, _destination, _routeOption);
-    final isMapHome = _index == 0 && _guideStep == null;
     final routeLabel = demoRoute.isEmpty
         ? null
         : _start == PrimePlace.elevator
-        ? '샘플 경로 · 엘리베이터 앞 → 603호'
-        : '샘플 경로 · 603호 → 엘리베이터 앞';
+        ? '경로 · 엘리베이터 앞 → 603호'
+        : '경로 · 603호 → 엘리베이터 앞';
     return MaterialApp(
       title: '요기조기',
       theme: AppTheme.light,
       home: Builder(
         builder: (context) => Scaffold(
-          appBar: isMapHome || _index == 1
+          appBar: _index <= 1
               ? null
               : AppBar(title: Text(['요기조기', '길찾기', '제보', '마이'][_index])),
           body: IndexedStack(
@@ -130,7 +129,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                   const ListTile(
                     leading: Icon(Icons.info_outline),
-                    title: Text('캠퍼스 데모'),
+                    title: Text('캠퍼스 정보'),
                     subtitle: Text('성신여대 수정캠퍼스 · 프라임관 6층'),
                   ),
                 ],
