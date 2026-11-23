@@ -57,6 +57,15 @@ Resources:
         UpdateReport:
           Type: HttpApi
           Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: PUT }
+        GetClassroom:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/classrooms/{id}', Method: GET }
+        ListMyReports:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /me/reports, Method: GET }
+        GetMyReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/me/reports/{id}', Method: GET }
 
   ReportsTable:
     Type: AWS::Serverless::SimpleTable

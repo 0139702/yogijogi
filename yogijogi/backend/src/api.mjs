@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { handleClassroomRequest } from './classrooms.mjs';
+import { handleMyReportRequest } from './my_reports.mjs';
 
 export const PHOTO_LIMIT = 3;
 export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
@@ -110,6 +112,10 @@ export function createHandler(store, { environment, reportsEnabled, photoStorage
     if (method === 'GET' && path === '/health') {
       return respond(200, { status: 'ok', environment, reportsEnabled });
     }
+    const classroomResponse = handleClassroomRequest(method, path);
+    if (classroomResponse) return classroomResponse;
+    const myReportResponse = await handleMyReportRequest(method, path);
+    if (myReportResponse) return myReportResponse;
     const match = /^\/reports(?:\/([a-f0-9-]{36})(?:\/photos(?:\/([a-f0-9-]{36})(\/complete)?)?)?)?$/.exec(path);
     if (!match) return respond(404, { error: 'not_found' });
     if (!reportsEnabled) return respond(403, { error: 'reports_disabled' });
