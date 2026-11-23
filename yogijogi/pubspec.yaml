@@ -64,7 +64,7 @@ flutter:
     - assets/3d/campus-viewer.html
     - assets/3d/campus-viewer.js
     - assets/3d/sungshin-campus-obj.zip
-    - assets/3d/suryongi_mascot_3d_bundle.zip
+    - assets/3d/suryongi-v4.stl.gz
 
   fonts:
     - family: Pretendard

@@ -1,11 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'core/app_config.dart';
-import 'core/app_colors.dart';
 import 'core/app_theme.dart';
 import 'features/map/map_screen.dart';
 import 'features/map/prime_floor.dart';
-import 'features/navigation/guidance.dart';
 import 'features/navigation/route_option.dart';
 import 'features/navigation/route_screen.dart';
 import 'features/reports/report_api.dart';
@@ -25,7 +23,7 @@ class _MyAppState extends State<MyApp> {
   PrimePlace? _destination;
   RouteOption _routeOption = RouteOption.shortest;
   int? _guideStep;
-  GuidanceView _view = GuidanceView.top;
+  bool _routePreview = false;
 
   @override
   void dispose() {
@@ -47,36 +45,9 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light,
       home: Builder(
         builder: (context) => Scaffold(
-          appBar: AppBar(
-            backgroundColor: isMapHome ? CampusHomeColors.header : null,
-            toolbarHeight: isMapHome ? 64 : null,
-            titleSpacing: isMapHome ? 16 : null,
-            title: _index == 0
-                ? (isMapHome ? const _CampusTitle() : const Text('요기조기'))
-                : Text(['요기조기', '길찾기', '제보', '마이'][_index]),
-            actions: [
-              if (_index == 0)
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: IconButton.filledTonal(
-                    style: IconButton.styleFrom(
-                      backgroundColor: CampusHomeColors.blueSoft,
-                      foregroundColor: AppColors.textPrimary,
-                    ),
-                    tooltip: '알림',
-                    icon: const Icon(Icons.notifications_none),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => Scaffold(
-                          appBar: AppBar(title: const Text('알림')),
-                          body: const Center(child: Text('받은 알림이 없습니다.')),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          appBar: isMapHome || _index == 1
+              ? null
+              : AppBar(title: Text(['요기조기', '길찾기', '제보', '마이'][_index])),
           body: IndexedStack(
             index: _index,
             children: [
@@ -86,14 +57,20 @@ class _MyAppState extends State<MyApp> {
                 start: _start,
                 destination: _destination,
                 guideStep: _guideStep,
-                view: _view,
-                onDirections: () => setState(() => _index = 1),
+                active: _index == 0,
+                routePreview: _routePreview && demoRoute.isNotEmpty,
+                onReport: (location) =>
+                    showReportForm(context, _api, location: location),
+                onDirections: () => setState(() {
+                  _routePreview = false;
+                  _index = 1;
+                }),
                 onPlaceSelected: (place) => setState(() {
+                  _routePreview = false;
                   _destination = place;
                   _guideStep = null;
                   _index = 1;
                 }),
-                onViewChanged: (view) => setState(() => _view = view),
                 onStepChanged: (step) => setState(() => _guideStep = step),
                 onEndGuidance: () => setState(() {
                   _guideStep = null;
@@ -104,7 +81,7 @@ class _MyAppState extends State<MyApp> {
                 start: _start,
                 destination: _destination,
                 option: _routeOption,
-                hasDemoRoute: demoRoute.isNotEmpty,
+                route: demoRoute,
                 onOptionChanged: (option) => setState(() {
                   _routeOption = option;
                   _guideStep = null;
@@ -114,15 +91,17 @@ class _MyAppState extends State<MyApp> {
                   _guideStep = null;
                 }),
                 onShowRoute: () => setState(() {
+                  _routePreview = true;
                   _guideStep = null;
                   _index = 0;
                 }),
                 onStartGuidance: () => setState(() {
+                  _routePreview = false;
                   _guideStep = 0;
-                  _view = GuidanceView.top;
                   _index = 0;
                 }),
                 onDestinationChanged: (place) => setState(() {
+                  _routePreview = false;
                   _destination = place;
                   _guideStep = null;
                 }),
@@ -160,7 +139,10 @@ class _MyAppState extends State<MyApp> {
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _index,
-            onDestinationSelected: (index) => setState(() => _index = index),
+            onDestinationSelected: (index) => setState(() {
+              _routePreview = false;
+              _index = index;
+            }),
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.map_outlined),
@@ -182,53 +164,6 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _CampusTitle extends StatelessWidget {
-  const _CampusTitle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 18,
-          backgroundColor: CampusHomeColors.blueStrong,
-          foregroundColor: Colors.white,
-          child: Icon(Icons.explore_outlined, size: 21),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'SUNGSHIN WOMEN’S UNIVERSITY',
-                style: AppTextStyles.caption.copyWith(
-                  color: CampusHomeColors.blueStrong,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .25,
-                  height: 1.15,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                'YogiJogi',
-                semanticsLabel: '요기조기',
-                style: AppTextStyles.title.copyWith(
-                  color: CampusHomeColors.wordmark,
-                  fontSize: 20,
-                  height: 1.05,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

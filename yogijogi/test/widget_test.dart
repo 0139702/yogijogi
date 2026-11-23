@@ -1,26 +1,36 @@
-import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yogijogi/app.dart';
 
 void main() {
-  testWidgets('opens full-screen quick search and returns to the floor map', (
+  const desktop = TargetPlatformVariant({TargetPlatform.windows});
+  testWidgets('opens full-screen quick search and returns to the campus map', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(360, 740));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MyApp());
-    expect(find.text('SUNGSHIN WOMEN’S UNIVERSITY'), findsOneWidget);
+    expect(find.byTooltip('알림'), findsOneWidget);
     expect(find.text('YogiJogi'), findsOneWidget);
-    await tester.tap(find.byTooltip('지도 중심으로 이동'));
+    final filterCenter = tester.getCenter(find.text('전체'));
+    for (final label in ['빈 강의실', '행사 2건', '벌레 주의']) {
+      expect(tester.getCenter(find.text(label)).dy, filterCenter.dy);
+    }
+    final search = tester.getRect(find.text('건물명, 강의실, 또는 제보 검색'));
+    final directions = tester.getCenter(find.byTooltip('길찾기 열기'));
+    expect(directions.dx, greaterThan(search.right));
+    expect(directions.dy, closeTo(search.center.dy, 1));
+    await tester.tap(find.byTooltip('수룡이 위치로 이동'));
     await tester.tap(find.text('빈 강의실'));
     await tester.pumpAndSettle();
     expect(find.text('빈 강의실을 확인할 수 있는 시간표가 없습니다.'), findsOneWidget);
     await tester.tap(find.text('전체'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('건물명, 강의실 검색'));
+    await tester.tap(find.text('건물명, 강의실, 또는 제보 검색').first);
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('검색 닫기'), findsOneWidget);
+    expect(find.text('지도'), findsOneWidget);
     expect(find.text('빠른 검색'), findsOneWidget);
     await tester.tap(find.text('빈 강의실'));
     await tester.pumpAndSettle();
@@ -28,8 +38,9 @@ void main() {
 
     await tester.tap(find.byTooltip('검색 닫기'));
     await tester.pumpAndSettle();
-    expect(find.text('프라임관 6층'), findsOneWidget);
-  });
+    expect(find.byTooltip('알림'), findsOneWidget);
+    expect(find.text('YogiJogi'), findsOneWidget);
+  }, variant: desktop);
 
   testWidgets('opens indoor route setup from the map tab', (tester) async {
     await tester.pumpWidget(const MyApp());
@@ -39,15 +50,20 @@ void main() {
     expect(find.text('프라임관 6층 · 도면 기반 데모'), findsOneWidget);
     expect(find.text('출발지'), findsOneWidget);
     expect(find.text('목적지'), findsOneWidget);
+    final startButton = find.widgetWithText(FilledButton, '이 경로로 안내 시작');
+    expect(startButton.hitTestable(), findsOneWidget);
+    expect(tester.widget<FilledButton>(startButton).onPressed, isNull);
+    await tester.scrollUntilVisible(find.text('안내받을 목적지를 선택해 주세요.'), 150);
+    await tester.pumpAndSettle();
     expect(find.text('안내받을 목적지를 선택해 주세요.'), findsOneWidget);
     expect(find.text('계단 없는 경로'), findsOneWidget);
-  });
+  }, variant: desktop);
 
   testWidgets('searches building tags and clears recent place selections', (
     tester,
   ) async {
     await tester.pumpWidget(const MyApp());
-    final searchButton = find.text('건물명, 강의실 검색');
+    final searchButton = find.text('건물명, 강의실, 또는 제보 검색').first;
     await tester.tap(searchButton);
     await tester.pumpAndSettle();
     expect(find.text('최근 검색'), findsOneWidget);
@@ -56,12 +72,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('조형관'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('목적지로 설정'));
-    await tester.pumpAndSettle();
-    expect(find.text('조형관'), findsOneWidget);
-    expect(find.text('이 경로로 안내 시작'), findsNothing);
-
-    await tester.tap(find.text('지도'));
+    expect(find.text('조형관 · 미술대학'), findsOneWidget);
+    expect(find.text('제보하기'), findsOneWidget);
+    expect(find.text('강의실 찾기'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
     await tester.tap(searchButton);
     await tester.pumpAndSettle();
@@ -72,12 +86,20 @@ void main() {
     await tester.enterText(find.byType(EditableText), '공학');
     await tester.pumpAndSettle();
     expect(find.text('프라임관'), findsOneWidget);
-  });
+  }, variant: desktop);
 
   testWidgets('selects a room on the floor map as destination', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('건물명, 강의실, 또는 제보 검색'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), '공학');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('프라임관'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('2D 층 안내도'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('603호'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('목적지로 설정'));
@@ -86,7 +108,7 @@ void main() {
     expect(find.text('6층 엘리베이터 앞'), findsOneWidget);
     expect(find.text('603호 프로그래밍 실습실 B'), findsOneWidget);
 
-    await tester.tap(find.text('지도에서 경로 보기'));
+    await tester.tap(find.byTooltip('지도에서 경로 보기'));
     await tester.pumpAndSettle();
 
     expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
@@ -95,27 +117,48 @@ void main() {
     await tester.tap(find.text('목적지로 설정'));
     await tester.pumpAndSettle();
 
-    expect(find.text('지도에서 경로 보기'), findsNothing);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byTooltip('지도에서 경로 보기'),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
     await tester.tap(find.text('지도'));
     await tester.pumpAndSettle();
 
     expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
-  });
+  }, variant: desktop);
 
   testWidgets('opens the reports tab without an API configuration', (
     tester,
   ) async {
     await tester.pumpWidget(const MyApp());
-    expect(find.text('프라임관 6층'), findsOneWidget);
+    expect(find.byTooltip('알림'), findsOneWidget);
+    expect(find.text('YogiJogi'), findsOneWidget);
 
     await tester.tap(find.text('제보'));
     await tester.pumpAndSettle();
 
     expect(find.text('제보를 보려면 API 주소를 설정해 주세요.'), findsOneWidget);
-  });
+  }, variant: desktop);
 
   testWidgets('route options only display verified demo paths', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('건물명, 강의실, 또는 제보 검색'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), '공학');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('프라임관'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('2D 층 안내도'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('603호'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('목적지로 설정'));
@@ -123,10 +166,12 @@ void main() {
 
     final stepFree = find.text('계단 없는 경로');
     await tester.scrollUntilVisible(stepFree, 150);
+    await tester.pumpAndSettle();
     await tester.tap(stepFree);
     await tester.pumpAndSettle();
     final unavailable = find.text('확인된 계단 없는 경로가 없습니다.');
     await tester.scrollUntilVisible(unavailable, 100);
+    await tester.pumpAndSettle();
     expect(unavailable, findsOneWidget);
 
     await tester.tap(find.text('지도'));
@@ -137,14 +182,16 @@ void main() {
     await tester.pumpAndSettle();
     final elevator = find.text('엘리베이터 우선');
     await tester.scrollUntilVisible(elevator, -100);
+    await tester.pumpAndSettle();
     await tester.tap(elevator);
     await tester.pumpAndSettle();
-    final showRoute = find.text('지도에서 경로 보기');
+    final showRoute = find.byTooltip('지도에서 경로 보기');
     await tester.scrollUntilVisible(showRoute, -100);
+    await tester.pumpAndSettle();
     await tester.tap(showRoute);
     await tester.pumpAndSettle();
     expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsOneWidget);
-  });
+  }, variant: desktop);
 
   testWidgets('confirms a search result, swaps endpoints and runs guidance', (
     tester,
@@ -152,7 +199,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(800, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MyApp());
-    await tester.tap(find.text('건물명, 강의실 검색'));
+    await tester.tap(find.text('건물명, 강의실, 또는 제보 검색').first);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), '603');
     await tester.pumpAndSettle();
@@ -162,6 +209,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('출발지와 목적지 바꾸기'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('이 경로로 안내 시작'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('이 경로로 안내 시작'));
     await tester.pumpAndSettle();
 
@@ -170,9 +219,6 @@ void main() {
     expect(find.text('도착'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -350));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('수룡이 따라가기'));
-    await tester.pumpAndSettle();
-    expect(find.text('수룡이 따라가기 시점 선택됨 · 3D 적용 전'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -150));
     await tester.pumpAndSettle();
     await tester.tap(find.text('다음 단계'));
@@ -195,5 +241,5 @@ void main() {
     await tester.tap(find.text('안내 종료'));
     await tester.pumpAndSettle();
     expect(find.text('출발지'), findsOneWidget);
-  });
+  }, variant: desktop);
 }

@@ -3,6 +3,25 @@ import 'package:material_ui/material_ui.dart';
 import 'report.dart';
 import 'report_api.dart';
 
+Future<Report?> showReportForm(
+  BuildContext context,
+  ReportApi api, {
+  Report? report,
+  String? location,
+}) {
+  if (api.baseUrl == null) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('제보를 등록하려면 API 주소를 설정해 주세요.')));
+    return Future.value();
+  }
+  return showDialog<Report>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _ReportForm(api: api, report: report, location: location),
+  );
+}
+
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key, required this.api});
 
@@ -26,11 +45,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   void _refresh() => setState(() => _reports = widget.api.list());
 
   Future<void> _edit([Report? report]) async {
-    final saved = await showDialog<Report>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _ReportForm(api: widget.api, report: report),
-    );
+    final saved = await showReportForm(context, widget.api, report: report);
     if (saved != null && mounted) _refresh();
   }
 
@@ -103,10 +118,11 @@ String _displayTime(DateTime time) =>
     time.toLocal().toString().substring(0, 16);
 
 class _ReportForm extends StatefulWidget {
-  const _ReportForm({required this.api, this.report});
+  const _ReportForm({required this.api, this.report, this.location});
 
   final ReportApi api;
   final Report? report;
+  final String? location;
 
   @override
   State<_ReportForm> createState() => _ReportFormState();
@@ -115,7 +131,9 @@ class _ReportForm extends StatefulWidget {
 class _ReportFormState extends State<_ReportForm> {
   final _form = GlobalKey<FormState>();
   late final _type = TextEditingController(text: widget.report?.type);
-  late final _location = TextEditingController(text: widget.report?.location);
+  late final _location = TextEditingController(
+    text: widget.report?.location ?? widget.location,
+  );
   late final _description = TextEditingController(
     text: widget.report?.description,
   );

@@ -34,10 +34,14 @@ class PlaceSearch extends StatefulWidget {
     super.key,
     required this.recent,
     required this.onClearRecent,
+    required this.onClose,
+    required this.onSelect,
   });
 
   final List<PrimePlace> recent;
   final VoidCallback onClearRecent;
+  final VoidCallback onClose;
+  final ValueChanged<PrimePlace> onSelect;
 
   @override
   State<PlaceSearch> createState() => _PlaceSearchState();
@@ -55,29 +59,73 @@ class _PlaceSearchState extends State<PlaceSearch> {
       final searchable = '${place.label} ${place.searchTerms}'.toLowerCase();
       return _filter.includes(place) && terms.every(searchable.contains);
     }).toList();
-    return Scaffold(
-      body: SafeArea(
+    return Material(
+      color: AppColors.surface,
+      child: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(12, 26, 16, 36),
               child: Row(
                 children: [
-                  IconButton(
-                    tooltip: '검색 닫기',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back),
+                  SizedBox(
+                    width: 40,
+                    height: 46,
+                    child: IconButton(
+                      tooltip: '검색 닫기',
+                      onPressed: widget.onClose,
+                      icon: const Icon(Icons.chevron_left, size: 28),
+                      style: IconButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        backgroundColor: AppColors.background,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search, color: AppColors.brand),
-                        labelText: '건물명이나 호실 검색',
-                        hintText: '예: 미술, 공학, 603',
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x121b2438),
+                            blurRadius: 20,
+                            offset: Offset(0, 7),
+                          ),
+                        ],
                       ),
-                      onChanged: (value) =>
-                          setState(() => _query = value.trim().toLowerCase()),
+                      child: TextField(
+                        style: AppTextStyles.body,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) {
+                          if (places.length == 1) {
+                            widget.onSelect(places.single);
+                          }
+                        },
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: AppColors.brandStrong,
+                          ),
+                          hintText: '건물명, 강의실, 또는 제보 검색',
+                          hintStyle: TextStyle(color: AppColors.textSecondary),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 8,
+                          ),
+                          filled: false,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        onChanged: (value) =>
+                            setState(() => _query = value.trim().toLowerCase()),
+                      ),
                     ),
                   ),
                 ],
@@ -85,58 +133,61 @@ class _PlaceSearchState extends State<PlaceSearch> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
                 children: [
                   if (showSuggestions) ...[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('최근 검색', style: AppTextStyles.title),
-                        if (widget.recent.isNotEmpty)
-                          TextButton(
-                            onPressed: () => setState(widget.onClearRecent),
-                            child: const Text('모두 지우기'),
-                          ),
+                        Expanded(
+                          child: Text('최근 검색', style: AppTextStyles.title),
+                        ),
+                        TextButton(
+                          onPressed: widget.recent.isEmpty
+                              ? null
+                              : () => setState(widget.onClearRecent),
+                          child: Text('모두 지우기', style: AppTextStyles.caption),
+                        ),
                       ],
                     ),
+                    const SizedBox(height: 4),
                     if (widget.recent.isEmpty)
-                      Text('최근 검색이 없습니다.', style: AppTextStyles.caption),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          '최근 검색이 없습니다.',
+                          style: AppTextStyles.caption,
+                        ),
+                      ),
                     for (final place in widget.recent)
                       ListTile(
-                        leading: const Icon(Icons.history),
-                        title: Text(place.label),
-                        onTap: () => Navigator.pop(context, place),
+                        minTileHeight: 53,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
+                        leading: const Icon(
+                          Icons.schedule,
+                          color: AppColors.textSecondary,
+                        ),
+                        title: Text(place.label, style: AppTextStyles.body),
+                        onTap: () => widget.onSelect(place),
                       ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 30),
                     Text('빠른 검색', style: AppTextStyles.title),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        const gap = AppSpacing.elementGapHorizontal;
-                        final width = constraints.maxWidth < 300
-                            ? constraints.maxWidth
-                            : (constraints.maxWidth - gap) / 2;
+                        const gap = 8.0;
+                        final width = (constraints.maxWidth - gap) / 2;
                         return Wrap(
                           spacing: gap,
-                          runSpacing: 8,
+                          runSpacing: gap,
                           children: [
                             for (final filter in PlaceFilter.values.skip(1))
                               SizedBox(
                                 width: width,
-                                child: OutlinedButton(
-                                  onPressed: () =>
-                                      setState(() => _filter = filter),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        filter.icon,
-                                        size: 20,
-                                        color: AppColors.brand,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Flexible(child: Text(filter.label)),
-                                    ],
-                                  ),
+                                child: _QuickSearchButton(
+                                  filter: filter,
+                                  onTap: () => setState(() => _filter = filter),
                                 ),
                               ),
                           ],
@@ -145,10 +196,13 @@ class _PlaceSearchState extends State<PlaceSearch> {
                     ),
                   ] else ...[
                     if (_filter != PlaceFilter.all)
-                      InputChip(
-                        label: Text(_filter.label),
-                        onDeleted: () =>
-                            setState(() => _filter = PlaceFilter.all),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: InputChip(
+                          label: Text(_filter.label),
+                          onDeleted: () =>
+                              setState(() => _filter = PlaceFilter.all),
+                        ),
                       ),
                     if (places.isEmpty)
                       Text(_filter.emptyMessage, style: AppTextStyles.caption),
@@ -160,7 +214,7 @@ class _PlaceSearchState extends State<PlaceSearch> {
                           place.detail,
                           style: AppTextStyles.caption,
                         ),
-                        onTap: () => Navigator.pop(context, place),
+                        onTap: () => widget.onSelect(place),
                       ),
                   ],
                 ],
@@ -168,6 +222,68 @@ class _PlaceSearchState extends State<PlaceSearch> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _QuickSearchButton extends StatelessWidget {
+  const _QuickSearchButton({required this.filter, required this.onTap});
+
+  final PlaceFilter filter;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color, background) = switch (filter) {
+      PlaceFilter.classrooms => (
+        Icons.menu_book_outlined,
+        AppColors.brandStrong,
+        AppColors.brandSoft,
+      ),
+      PlaceFilter.elevator => (
+        Icons.elevator_outlined,
+        AppColors.resolved,
+        const Color(0xffe3f5ed),
+      ),
+      PlaceFilter.events => (
+        Icons.calendar_month_outlined,
+        AppColors.brand,
+        AppColors.brandSoft,
+      ),
+      _ => (
+        Icons.warning_amber_outlined,
+        AppColors.hazard,
+        const Color(0xffffefe7),
+      ),
+    };
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        foregroundColor: AppColors.textPrimary,
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      ),
+      onPressed: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              filter.label,
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }
