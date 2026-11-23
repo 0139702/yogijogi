@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_colors.dart';
+import '../../core/header_icon_button.dart';
 import 'campus_3d_screen.dart';
 import 'place_search.dart';
 import 'prime_floor.dart';
@@ -574,11 +575,15 @@ class _CampusHeader extends StatelessWidget {
         child: Row(
           spacing: 8,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.brandStrong,
-              foregroundColor: AppColors.surface,
-              child: Icon(Icons.explore_outlined, size: 21),
+              backgroundColor: AppColors.surface,
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 28,
+                height: 28,
+                semanticLabel: '요기조기 로고',
+              ),
             ),
             Expanded(
               child: Column(
@@ -601,15 +606,7 @@ class _CampusHeader extends StatelessWidget {
                 ],
               ),
             ),
-            IconButton(
-              tooltip: '알림',
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.brandStrong,
-              ),
-              icon: const Icon(Icons.notifications_none),
-              onPressed: onNotifications,
-            ),
+            HeaderIconButton.notifications(onPressed: onNotifications),
           ],
         ),
       ),

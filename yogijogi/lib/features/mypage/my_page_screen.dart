@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_colors.dart';
 import '../../core/app_config.dart';
+import '../../core/header_icon_button.dart';
 import '../reports/report_category.dart';
 import 'my_report.dart';
 import 'my_reports_api.dart';
@@ -217,14 +218,15 @@ class _Header extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              color: AppColors.brandStrong,
-              shape: BoxShape.circle,
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.surface,
+            child: Image.asset(
+              'assets/images/logo.png',
+              width: 28,
+              height: 28,
+              semanticLabel: '요기조기 로고',
             ),
-            child: const Icon(Icons.explore, color: Colors.white, size: 20),
           ),
           const SizedBox(width: AppSpacing.elementGapHorizontal),
           Expanded(
@@ -242,19 +244,9 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          _CircleIconButton(
-            icon: Icons.notifications_none,
-            tooltip: '알림',
-            onPressed: onNotifications,
-          ),
+          HeaderIconButton.notifications(onPressed: onNotifications),
           const SizedBox(width: 8),
-          _CircleIconButton(
-            icon: Icons.person_outline,
-            tooltip: '프로필',
-            onPressed: onProfile,
-            background: AppColors.surface,
-            bordered: true,
-          ),
+          HeaderIconButton.profile(onPressed: onProfile),
         ],
       ),
     );
@@ -266,15 +258,11 @@ class _CircleIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
-    this.background = AppColors.brandSoft,
-    this.bordered = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-  final Color background;
-  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
@@ -284,9 +272,8 @@ class _CircleIconButton extends StatelessWidget {
       icon: Icon(icon, size: 22),
       color: AppColors.brandStrong,
       style: IconButton.styleFrom(
-        backgroundColor: background,
+        backgroundColor: AppColors.brandSoft,
         minimumSize: const Size(44, 44),
-        side: bordered ? const BorderSide(color: AppColors.border) : null,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_colors.dart';
+import '../../core/header_icon_button.dart';
 import '../auth/auth_service.dart';
 import 'report.dart';
 import 'report_api.dart';
@@ -279,25 +280,11 @@ class _FeedHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: '알림',
+              HeaderIconButton.notifications(
                 onPressed: () => onComingSoon('알림은 준비 중이에요.'),
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: AppColors.textPrimary,
-                ),
               ),
-              const SizedBox(width: 4),
-              IconButton.filled(
-                tooltip: '마이',
-                onPressed: onProfile,
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.brandStrong,
-                  foregroundColor: Colors.white,
-                  fixedSize: const Size(48, 48),
-                ),
-                icon: const Icon(Icons.person_outline),
-              ),
+              const SizedBox(width: 8),
+              HeaderIconButton.profile(onPressed: onProfile),
             ],
           ),
         ),
