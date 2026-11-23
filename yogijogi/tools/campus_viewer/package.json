@@ -1,0 +1,15 @@
+{
+  "name": "yogijogi-campus-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild scene.js --bundle --minify --format=iife --supported:template-literal=false --legal-comments=inline --outfile=../../assets/3d/campus-viewer.js"
+  },
+  "dependencies": {
+    "fflate": "0.8.2",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

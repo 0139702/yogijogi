@@ -8,10 +8,16 @@ import 'report_category.dart';
 import 'report_form_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key, required this.api, this.auth});
+  const ReportsScreen({
+    super.key,
+    required this.api,
+    this.auth,
+    this.initialLocation,
+  });
 
   final ReportApi api;
   final AuthService? auth;
+  final String? initialLocation;
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -27,6 +33,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _reports = widget.api.baseUrl == null
         ? Future.value(const [])
         : widget.api.list();
+    final initialLocation = widget.initialLocation;
+    if (initialLocation != null && widget.api.baseUrl != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _edit(null, initialLocation);
+      });
+    }
   }
 
   Future<void> _refresh() {
@@ -35,10 +47,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return reports.then((_) {}, onError: (_) {});
   }
 
-  Future<void> _edit([Report? report]) async {
+  Future<void> _edit([Report? report, String? initialLocation]) async {
     final saved = await Navigator.of(context).push<Report>(
       MaterialPageRoute(
-        builder: (_) => ReportFormScreen(api: widget.api, report: report),
+        builder: (_) => ReportFormScreen(
+          api: widget.api,
+          report: report,
+          initialLocation: initialLocation,
+        ),
       ),
     );
     if (saved != null && mounted) _refresh();

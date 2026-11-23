@@ -10,10 +10,16 @@ import 'report_api.dart';
 import 'report_category.dart';
 
 class ReportFormScreen extends StatefulWidget {
-  const ReportFormScreen({super.key, required this.api, this.report});
+  const ReportFormScreen({
+    super.key,
+    required this.api,
+    this.report,
+    this.initialLocation,
+  });
 
   final ReportApi api;
   final Report? report;
+  final String? initialLocation;
 
   @override
   State<ReportFormScreen> createState() => _ReportFormScreenState();
@@ -23,7 +29,9 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   static const _descriptionLimit = 200;
   static const _photoLimit = 3;
 
-  late final _location = ReportLocation.parse(widget.report?.location ?? '');
+  late final _location = ReportLocation.parse(
+    widget.report?.location ?? widget.initialLocation ?? '',
+  );
   late String? _type = widget.report?.type;
   late String? _floor = _location.floor;
   late DateTime _occurredAt = (widget.report?.occurredAt ?? DateTime.now())

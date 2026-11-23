@@ -46,7 +46,12 @@ void main() {
     addTearDown(tester.view.reset);
     final api = ReportApi(null);
     addTearDown(api.close);
-    await tester.pumpWidget(MaterialApp(home: ReportFormScreen(api: api)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportFormScreen(api: api, initialLocation: '프라임관'),
+      ),
+    );
+    expect(find.text('프라임관'), findsOneWidget);
 
     await tester.tap(find.text('제보 등록하기'));
     await tester.pump();

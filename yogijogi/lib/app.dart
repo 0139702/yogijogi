@@ -8,7 +8,6 @@ import 'features/auth/demo_auth_service.dart';
 import 'features/map/map_screen.dart';
 import 'features/mypage/my_page_screen.dart';
 import 'features/map/prime_floor.dart';
-import 'features/navigation/guidance.dart';
 import 'features/navigation/route_option.dart';
 import 'features/navigation/route_screen.dart';
 import 'features/reports/report_api.dart';
@@ -30,11 +29,12 @@ class _MyAppState extends State<MyApp> {
         )
       : DemoAuthService();
   int _index = 0;
+  String? _reportLocation;
   PrimePlace _start = PrimePlace.elevator;
   PrimePlace? _destination;
   RouteOption _routeOption = RouteOption.shortest;
   int? _guideStep;
-  GuidanceView _view = GuidanceView.top;
+  bool _routePreview = false;
 
   @override
   void dispose() {
@@ -49,31 +49,16 @@ class _MyAppState extends State<MyApp> {
     final routeLabel = demoRoute.isEmpty
         ? null
         : _start == PrimePlace.elevator
-        ? '샘플 경로 · 엘리베이터 앞 → 603호'
-        : '샘플 경로 · 603호 → 엘리베이터 앞';
+        ? '경로 · 엘리베이터 앞 → 603호'
+        : '경로 · 603호 → 엘리베이터 앞';
     return MaterialApp(
       title: '요기조기',
       theme: AppTheme.light,
       home: Builder(
         builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: Text(['요기조기', '길찾기', '제보', '마이'][_index]),
-            actions: [
-              if (_index == 0)
-                IconButton(
-                  tooltip: '알림',
-                  icon: const Icon(Icons.notifications_none),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('알림')),
-                        body: const Center(child: Text('받은 알림이 없습니다.')),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          appBar: _index <= 1
+              ? null
+              : AppBar(title: Text(['요기조기', '길찾기', '제보', '마이'][_index])),
           body: IndexedStack(
             index: _index,
             children: [
@@ -83,14 +68,22 @@ class _MyAppState extends State<MyApp> {
                 start: _start,
                 destination: _destination,
                 guideStep: _guideStep,
-                view: _view,
-                onDirections: () => setState(() => _index = 1),
+                active: _index == 0,
+                routePreview: _routePreview && demoRoute.isNotEmpty,
+                onReport: (location) => setState(() {
+                  _reportLocation = location;
+                  _index = 2;
+                }),
+                onDirections: () => setState(() {
+                  _routePreview = false;
+                  _index = 1;
+                }),
                 onPlaceSelected: (place) => setState(() {
+                  _routePreview = false;
                   _destination = place;
                   _guideStep = null;
                   _index = 1;
                 }),
-                onViewChanged: (view) => setState(() => _view = view),
                 onStepChanged: (step) => setState(() => _guideStep = step),
                 onEndGuidance: () => setState(() {
                   _guideStep = null;
@@ -101,7 +94,7 @@ class _MyAppState extends State<MyApp> {
                 start: _start,
                 destination: _destination,
                 option: _routeOption,
-                hasDemoRoute: demoRoute.isNotEmpty,
+                route: demoRoute,
                 onOptionChanged: (option) => setState(() {
                   _routeOption = option;
                   _guideStep = null;
@@ -111,15 +104,17 @@ class _MyAppState extends State<MyApp> {
                   _guideStep = null;
                 }),
                 onShowRoute: () => setState(() {
+                  _routePreview = true;
                   _guideStep = null;
                   _index = 0;
                 }),
                 onStartGuidance: () => setState(() {
+                  _routePreview = false;
                   _guideStep = 0;
-                  _view = GuidanceView.top;
                   _index = 0;
                 }),
                 onDestinationChanged: (place) => setState(() {
+                  _routePreview = false;
                   _destination = place;
                   _guideStep = null;
                 }),
@@ -134,7 +129,11 @@ class _MyAppState extends State<MyApp> {
                 },
               ),
               if (_index == 2)
-                ReportsGate(auth: _auth, api: _api)
+                ReportsGate(
+                  auth: _auth,
+                  api: _api,
+                  initialLocation: _reportLocation,
+                )
               else
                 const SizedBox.shrink(),
               if (_index == 3)
@@ -145,7 +144,11 @@ class _MyAppState extends State<MyApp> {
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _index,
-            onDestinationSelected: (index) => setState(() => _index = index),
+            onDestinationSelected: (index) => setState(() {
+              _routePreview = false;
+              if (index != 2) _reportLocation = null;
+              _index = index;
+            }),
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.map_outlined),

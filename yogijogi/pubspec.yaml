@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: 2.5.6
   image_picker: ^1.2.4
+  webview_flutter: 4.14.1
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +63,10 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/3d/campus-viewer.html
+    - assets/3d/campus-viewer.js
+    - assets/3d/sungshin-campus-obj.zip
+    - assets/3d/suryongi-v4.stl.gz
 
   fonts:
     - family: Pretendard
