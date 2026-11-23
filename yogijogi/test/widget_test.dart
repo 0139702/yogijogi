@@ -72,22 +72,31 @@ void main() {
     expect(find.text('빠른 검색'), findsOneWidget);
     await tester.enterText(find.byType(EditableText), '미술');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('조형관'));
+    expect(find.text('조형2관'), findsOneWidget);
+    await tester.tap(find.text('조형1관'));
     await tester.pumpAndSettle();
-    expect(find.text('조형관 · 미술대학'), findsOneWidget);
+    expect(find.text('조형1관 · 미술대학'), findsOneWidget);
     expect(find.text('제보하기'), findsOneWidget);
     expect(find.text('강의실 찾기'), findsOneWidget);
     await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
     await tester.tap(searchButton);
     await tester.pumpAndSettle();
-    expect(find.text('조형관'), findsOneWidget);
+    expect(find.text('조형1관'), findsOneWidget);
     await tester.tap(find.text('모두 지우기'));
     await tester.pumpAndSettle();
     expect(find.text('최근 검색이 없습니다.'), findsOneWidget);
     await tester.enterText(find.byType(EditableText), '공학');
     await tester.pumpAndSettle();
     expect(find.text('프라임관'), findsOneWidget);
+    expect(find.text('과학관'), findsOneWidget);
+    await tester.enterText(find.byType(EditableText), '과학');
+    await tester.pumpAndSettle();
+    expect(find.text('프라임관'), findsOneWidget);
+    expect(find.text('과학관'), findsOneWidget);
+    await tester.enterText(find.byType(EditableText), '음악');
+    await tester.pumpAndSettle();
+    expect(find.text('음악대학'), findsOneWidget);
   }, variant: desktop);
 
   testWidgets('selects a room on the floor map as destination', (tester) async {

@@ -33,10 +33,10 @@ function model(parts, stem) {
 
 const campusPlaces = {
   johyeong_hall_1: ['artsBuilding', '조형1관'],
-  johyeong_hall_2: ['artsBuilding', '조형2관'],
-  music_hall: ['musicHall', '음악관'],
+  johyeong_hall_2: ['artsBuilding2', '조형2관'],
+  music_hall: ['musicHall', '음악대학'],
   sungshin_hall: ['sungshinHall', '성신관'],
-  campus_museum: ['campusMuseum', '박물관'],
+
   sujeong_hall_a: ['sujeongHallA', '수정관 A동'],
   campus_structure_05: ['primeBuilding', '프라임관'],
   sujeong_hall_b: ['sujeongHallB', '수정관 B동'],
@@ -139,6 +139,9 @@ function paintMascot(geometry) {
 function start(rooms, corridor, initialIndoor, initialFilter, initialActive, measure) {
   const started = performance.now();
   const campusSource = model(archives.campus, 'sungshin-campus-lowpoly');
+  for (const mesh of [...campusSource.children]) {
+    if (/^label_(plate_)?(campus_museum|music_hall)$/.test(mesh.name)) mesh.removeFromParent();
+  }
   const campus = batchCampus(campusSource);
   const campusTargets = campusSource.children.filter(mesh =>
     Object.hasOwn(campusPlaces, mesh.name.replace(/^label_(plate_)?/, '')));
@@ -215,8 +218,11 @@ function start(rooms, corridor, initialIndoor, initialFilter, initialActive, mea
   for (const [object, categories, label] of statusMarkers) {
     addMarker(campusSource.getObjectByName(object), campusPlaces[object][0], label, categories);
   }
-  const [primeId, primeLabel] = campusPlaces.campus_structure_05;
-  addMarker(campusSource.getObjectByName('campus_structure_05'), primeId, primeLabel);
+  for (const key of ['campus_structure_05', 'music_hall']) {
+    const [id, label] = campusPlaces[key];
+    addMarker(campusSource.getObjectByName(key), id, label);
+  }
+
 
   let inside = false;
   let filter = 'all';

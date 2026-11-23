@@ -50,18 +50,18 @@ const sampleReports = [
     },
   },
   {
-    id: 'demo-2', type: '비흡연구역 흡연', location: '사회과학관 동편 계단 (1F)',
+    id: 'demo-2', type: '비흡연구역 흡연', location: '수정관 동편 계단 (1F)',
     description: '계단 출입구 근처에서 담배 냄새가 나요.',
     history: [['received', 0, '09:05']],
   },
   {
-    id: 'demo-3', type: '시설 고장 / 파손', location: '법학관 정수기 (1F)',
+    id: 'demo-3', type: '시설 고장 / 파손', location: '과학관 정수기 (1F)',
     description: '정수기 아래로 물이 새고 있어요.',
     history: [['received', 2, '10:00'], ['checking', 2, '11:30'], ['in_progress', 2, '14:00'], ['resolved', 2, '16:30']],
     response: { department: '시설관리팀', message: '정수기 배관을 교체했어요.', at: [2, '16:30'] },
   },
   {
-    id: 'demo-4', type: '기타 불편 / 제안', location: '학생회관 라운지 (2F)',
+    id: 'demo-4', type: '기타 불편 / 제안', location: '성신관 라운지 (2F)',
     description: '라운지 의자 몇 개가 흔들려요.',
     history: [['received', 4, '15:00'], ['checking', 4, '17:00'], ['resolved', 3, '11:00']],
     response: { department: '시설관리팀', message: '흔들리는 의자를 교체했어요.', at: [3, '11:00'] },
@@ -79,7 +79,7 @@ const sampleReports = [
     response: { department: '학생지원처', message: '출입구 주변 방역을 마쳤어요.', at: [7, '18:00'] },
   },
   {
-    id: 'demo-7', type: '비흡연구역 흡연', location: '운정그린캠퍼스 정문 옆',
+    id: 'demo-7', type: '비흡연구역 흡연', location: '수정캠퍼스 정문 옆',
     description: '정문 옆 벤치 주변에 꽁초가 많아요.',
     history: [['received', 12, '17:40'], ['checking', 11, '09:00'], ['resolved', 10, '14:00']],
     response: { department: '총무팀', message: '금연 안내 표지를 추가로 설치했어요.', at: [10, '14:00'] },
