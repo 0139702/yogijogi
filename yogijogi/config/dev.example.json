@@ -1,4 +1,6 @@
 {
   "APP_ENV": "dev",
-  "API_BASE_URL": "https://replace-me.execute-api.ap-northeast-2.amazonaws.com"
+  "API_BASE_URL": "https://replace-me.execute-api.ap-northeast-2.amazonaws.com",
+  "COGNITO_REGION": "ap-northeast-2",
+  "COGNITO_CLIENT_ID": "replace-me"
 }

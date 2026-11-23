@@ -74,16 +74,14 @@ void main() {
     expect(find.text('샘플 경로 · 엘리베이터 앞 → 603호'), findsNothing);
   });
 
-  testWidgets('opens the reports tab without an API configuration', (
-    tester,
-  ) async {
+  testWidgets('asks to log in when opening the reports tab', (tester) async {
     await tester.pumpWidget(const MyApp());
     expect(find.text('프라임관 6층'), findsOneWidget);
 
     await tester.tap(find.text('제보'));
     await tester.pumpAndSettle();
 
-    expect(find.text('제보를 보려면 API 주소를 설정해 주세요.'), findsOneWidget);
+    expect(find.text('로그인하고 제보에 참여해요'), findsOneWidget);
   });
 
   testWidgets('route options only display verified demo paths', (tester) async {

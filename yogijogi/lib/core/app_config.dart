@@ -6,6 +6,11 @@ class AppConfig {
     defaultValue: 'local',
   );
   static const _rawApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const cognitoRegion = String.fromEnvironment('COGNITO_REGION');
+  static const cognitoClientId = String.fromEnvironment('COGNITO_CLIENT_ID');
+
+  static bool get isCognitoConfigured =>
+      cognitoRegion.isNotEmpty && cognitoClientId.isNotEmpty;
 
   static Uri? get apiBaseUrl {
     final uri = Uri.tryParse(_rawApiBaseUrl);
