@@ -53,7 +53,7 @@ class DemoMyReportsRepository extends MyReportsRepository {
       _report(
         id: 'demo-2',
         type: '비흡연구역 흡연',
-        location: const ReportLocation('사회과학관 동편 계단', '1F'),
+        location: const ReportLocation('수정관 동편 계단', '1F'),
         description: '계단 출입구 근처에서 담배 냄새가 나요.',
         occurredAt: daysAgo(0, 9, 5),
         history: [(ReportStage.received, daysAgo(0, 9, 5))],
@@ -61,7 +61,7 @@ class DemoMyReportsRepository extends MyReportsRepository {
       _report(
         id: 'demo-3',
         type: '시설 고장 / 파손',
-        location: const ReportLocation('법학관 정수기', '1F'),
+        location: const ReportLocation('과학관 정수기', '1F'),
         description: '정수기 아래로 물이 새고 있어요.',
         occurredAt: daysAgo(2, 10, 0),
         history: [
@@ -80,7 +80,7 @@ class DemoMyReportsRepository extends MyReportsRepository {
       _report(
         id: 'demo-4',
         type: '기타 불편 / 제안',
-        location: const ReportLocation('학생회관 라운지', '2F'),
+        location: const ReportLocation('성신관 라운지', '2F'),
         description: '라운지 의자 몇 개가 흔들려요.',
         occurredAt: daysAgo(4, 15, 0),
         history: [
@@ -135,7 +135,7 @@ class DemoMyReportsRepository extends MyReportsRepository {
       _report(
         id: 'demo-7',
         type: '비흡연구역 흡연',
-        location: const ReportLocation('운정그린캠퍼스 정문 옆', null),
+        location: const ReportLocation('수정캠퍼스 정문 옆', null),
         description: '정문 옆 벤치 주변에 꽁초가 많아요.',
         occurredAt: daysAgo(12, 17, 40),
         history: [

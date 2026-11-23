@@ -41,10 +41,12 @@ enum PrimePlace {
     Offset(.43, .40),
   ),
   primeBuilding('프라임관', '프라임관'),
-  artsBuilding('조형관', '조형관'),
-  musicHall('음악관', '음악관'),
+  artsBuilding('조형1관', '조형1관'),
+  artsBuilding2('조형2관', '조형2관'),
+  musicHall('음악대학', '음악대학'),
   sungshinHall('성신관', '성신관'),
-  campusMuseum('박물관', '박물관'),
+  scienceHall('과학관', '과학관'),
+  nanhyangHall('난향관', '난향관'),
   sujeongHallA('수정관 A동', '수정관 A동'),
   sujeongHallB('수정관 B동', '수정관 B동'),
   sujeongHallC('수정관 C동', '수정관 C동'),
@@ -61,8 +63,10 @@ enum PrimePlace {
   String get detail => bounds == null ? '수정캠퍼스 · 건물' : '프라임관 6층 · 층 안내도 기준';
 
   String get searchTerms => switch (this) {
-    primeBuilding => '공학 IT 프라임관 건물',
-    artsBuilding => '미술 디자인 조형관 조형1관 건물',
+    primeBuilding => '공학 과학 IT 프라임관 건물',
+    artsBuilding || artsBuilding2 => '미술 디자인 조형관 미술대학',
+    musicHall => '음악 음악관 음대',
+    scienceHall => '공학 과학 자연과학',
     elevator => '프라임관 6층 엘리베이터 승강기',
     sungshinHall => '성신관 바퀴벌레 벌레 주의',
     _ => bounds == null ? label : '프라임관 6층 강의실 실습실',

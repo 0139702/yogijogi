@@ -256,8 +256,10 @@ class _MapScreenState extends State<MapScreen> {
   static final _buildings = {
     for (final place in PrimePlace.values)
       if (place.bounds == null)
-        place.name: place == PrimePlace.artsBuilding
-            ? '조형관 · 미술대학'
+        place.name:
+            place == PrimePlace.artsBuilding ||
+                place == PrimePlace.artsBuilding2
+            ? '${place.label} · 미술대학'
             : place.label,
   };
 
