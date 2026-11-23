@@ -1,4 +1,6 @@
 {
   "APP_ENV": "local",
-  "API_BASE_URL": "http://10.0.2.2:3000"
+  "API_BASE_URL": "http://10.0.2.2:3000",
+  "COGNITO_REGION": "",
+  "COGNITO_CLIENT_ID": ""
 }

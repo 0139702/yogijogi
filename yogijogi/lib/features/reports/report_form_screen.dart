@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_colors.dart';
@@ -18,6 +21,7 @@ class ReportFormScreen extends StatefulWidget {
 
 class _ReportFormScreenState extends State<ReportFormScreen> {
   static const _descriptionLimit = 200;
+  static const _photoLimit = 3;
 
   late final _location = ReportLocation.parse(widget.report?.location ?? '');
   late String? _type = widget.report?.type;
@@ -32,6 +36,13 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   bool _submitted = false;
   bool _saving = false;
   bool _failed = false;
+  final _picker = ImagePicker();
+  final _photos = <XFile>[];
+  late final _keptPhotos = [...?widget.report?.photos];
+  bool _photoGuideShown = false;
+  String? _progress;
+
+  int get _photoCount => _keptPhotos.length + _photos.length;
 
   @override
   void dispose() {
@@ -67,6 +78,94 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     });
   }
 
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _addPhoto() async {
+    if (!_photoGuideShown) {
+      final agreed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('사진을 올리기 전에 확인해 주세요'),
+          content: const Text(
+            '얼굴, 이름, 연락처, 차량 번호처럼 다른 사람을 알아볼 수 있는 정보가 '
+            '찍히지 않게 해 주세요. 문제 상황이 보이는 범위만 담아 주세요.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('확인했어요'),
+            ),
+          ],
+        ),
+      );
+      if (agreed != true || !mounted) return;
+      _photoGuideShown = true;
+    }
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('앨범에서 선택'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('카메라로 촬영'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    try {
+      final photo = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+      if (photo != null && mounted) setState(() => _photos.add(photo));
+    } on PlatformException {
+      if (mounted) _showMessage('사진을 불러오지 못했어요. 카메라와 사진 접근 권한을 확인해 주세요.');
+    }
+  }
+
+  /// 지운 기존 사진을 서버에서 삭제하고 새 사진을 올린다. 실패한 장수를 돌려준다.
+  Future<int> _syncPhotos(Report saved, ValueChanged<Report> onUpdated) async {
+    var failed = 0;
+    final keptIds = {for (final photo in _keptPhotos) photo.id};
+    for (final photo in saved.photos.where((p) => !keptIds.contains(p.id))) {
+      try {
+        onUpdated(await widget.api.deletePhoto(saved.id, photo.id));
+      } on Exception {
+        failed++;
+      }
+    }
+    for (final (index, photo) in _photos.indexed) {
+      if (mounted) {
+        setState(() => _progress = '사진 올리는 중 (${index + 1}/${_photos.length})');
+      }
+      try {
+        onUpdated(await widget.api.uploadPhoto(saved.id, File(photo.path)));
+      } on Exception {
+        failed++;
+      }
+    }
+    return failed;
+  }
+
   Future<void> _save() async {
     setState(() => _submitted = true);
     final type = _type;
@@ -80,14 +179,21 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       _failed = false;
     });
     try {
-      final saved = await widget.api.save(
+      var saved = await widget.api.save(
         id: widget.report?.id,
         type: type,
         location: ReportLocation(_place.text.trim(), _floor).encode(),
         description: _description.text.trim(),
         occurredAt: _occurredAt,
       );
-      if (mounted) Navigator.pop(context, saved);
+      final failed = await _syncPhotos(saved, (report) => saved = report);
+      if (!mounted) return;
+      if (failed > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('제보는 저장됐지만 사진 $failed장을 처리하지 못했어요.')),
+        );
+      }
+      Navigator.pop(context, saved);
     } on Exception {
       if (mounted) {
         setState(() {
@@ -263,6 +369,35 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
           ),
           if (_submitted && _description.text.trim().isEmpty)
             const _ErrorText('상세 내용을 입력해 주세요.'),
+          const _SectionTitle('사진 (선택)'),
+          SizedBox(
+            height: 88,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                if (_photoCount < _photoLimit)
+                  _AddPhotoTile(
+                    count: _photoCount,
+                    limit: _photoLimit,
+                    onTap: _saving ? null : _addPhoto,
+                  ),
+                for (final photo in _keptPhotos)
+                  _PhotoThumbnail(
+                    image: NetworkImage(photo.url.toString()),
+                    onRemove: _saving
+                        ? null
+                        : () => setState(() => _keptPhotos.remove(photo)),
+                  ),
+                for (final photo in _photos)
+                  _PhotoThumbnail(
+                    image: FileImage(File(photo.path)),
+                    onRemove: _saving
+                        ? null
+                        : () => setState(() => _photos.remove(photo)),
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -317,7 +452,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             ),
             child: Text(
               _saving
-                  ? '저장 중'
+                  ? _progress ?? '저장 중'
                   : editing
                   ? '수정 완료'
                   : '제보 등록하기',
@@ -540,6 +675,107 @@ class _Block extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+}
+
+class _AddPhotoTile extends StatelessWidget {
+  const _AddPhotoTile({
+    required this.count,
+    required this.limit,
+    required this.onTap,
+  });
+
+  final int count;
+  final int limit;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: const BorderSide(color: AppColors.border),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.elementGapHorizontal),
+      child: Material(
+        color: AppColors.surface,
+        shape: shape,
+        child: InkWell(
+          customBorder: shape,
+          onTap: onTap,
+          child: SizedBox(
+            width: 88,
+            height: 88,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: AppColors.brand,
+                ),
+                const SizedBox(height: 4),
+                Text('$count / $limit', style: AppTextStyles.caption),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoThumbnail extends StatelessWidget {
+  const _PhotoThumbnail({required this.image, required this.onRemove});
+
+  final ImageProvider image;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.elementGapHorizontal),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: image,
+              width: 88,
+              height: 88,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const SizedBox(
+                width: 88,
+                height: 88,
+                child: ColoredBox(
+                  color: AppColors.brandSoft,
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IconButton.filled(
+              tooltip: '사진 삭제',
+              onPressed: onRemove,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black54,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(28, 28),
+                fixedSize: const Size(28, 28),
+                padding: EdgeInsets.zero,
+              ),
+              iconSize: 16,
+              icon: const Icon(Icons.close),
+            ),
+          ),
+        ],
       ),
     );
   }

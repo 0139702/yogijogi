@@ -1,15 +1,17 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/app_colors.dart';
+import '../auth/auth_service.dart';
 import 'report.dart';
 import 'report_api.dart';
 import 'report_category.dart';
 import 'report_form_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key, required this.api});
+  const ReportsScreen({super.key, required this.api, this.auth});
 
   final ReportApi api;
+  final AuthService? auth;
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -42,10 +44,48 @@ class _ReportsScreenState extends State<ReportsScreen> {
     if (saved != null && mounted) _refresh();
   }
 
-  void _showMap() {
+  void _comingSoon(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('지도 연동 후 이용할 수 있어요.')));
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showProfile() {
+    final auth = widget.auth;
+    final user = auth?.currentUser;
+    if (auth == null || user == null) {
+      _comingSoon('마이 페이지는 준비 중이에요.');
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.brandSoft,
+                child: Icon(Icons.person_outline, color: AppColors.brandStrong),
+              ),
+              title: Text(user.nickname ?? '', style: AppTextStyles.title),
+              subtitle: Text(
+                '@${user.username} · 학교 이메일 인증 완료',
+                style: AppTextStyles.caption,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text('로그아웃', style: AppTextStyles.body),
+              onTap: () {
+                Navigator.pop(context);
+                auth.signOut();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -68,6 +108,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           final reports = snapshot.data ?? const <Report>[];
           return Column(
             children: [
+              _FeedHeader(onComingSoon: _comingSoon, onProfile: _showProfile),
               _FilterBar(
                 reports: reports,
                 selected: _filter,
@@ -110,8 +151,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           96,
         ),
         children: [
-          const _DemoNotice(),
-          const SizedBox(height: 16),
           if (reports.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 80),
@@ -127,7 +166,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             _ReportCard(
               report: report,
               onEdit: () => _edit(report),
-              onShowMap: _showMap,
+              onShowMap: () => _comingSoon('지도 연동 후 이용할 수 있어요.'),
             ),
         ],
       ),
@@ -144,35 +183,108 @@ String _relativeTime(DateTime time) {
   return reportDateTime(time);
 }
 
-class _DemoNotice extends StatelessWidget {
-  const _DemoNotice();
+// 데모 값: 사용자·레벨 데이터가 생기면 서버 값으로 교체한다.
+const _demoLevel = 'Lv.4 수호자';
+
+class _FeedHeader extends StatelessWidget {
+  const _FeedHeader({required this.onComingSoon, required this.onProfile});
+
+  final ValueChanged<String> onComingSoon;
+  final VoidCallback onProfile;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.brandSoft,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.info_outline,
-            size: 16,
-            color: AppColors.brandStrong,
+    return ColoredBox(
+      color: AppColors.surface,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenPadding,
+            8,
+            AppSpacing.screenPadding,
+            8,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '데모 단계예요. 제보는 학교 담당 부서에 전달되지 않아요.',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.brandStrong,
-                fontWeight: FontWeight.w500,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brand.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  semanticLabel: '요기조기 로고',
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "SUNGSHIN WOMEN'S CAMPUS",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.brandStrong,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandSoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _demoLevel,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.brandStrong,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: '알림',
+                onPressed: () => onComingSoon('알림은 준비 중이에요.'),
+                icon: const Icon(
+                  Icons.notifications_none,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton.filled(
+                tooltip: '마이',
+                onPressed: onProfile,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.brandStrong,
+                  foregroundColor: Colors.white,
+                  fixedSize: const Size(48, 48),
+                ),
+                icon: const Icon(Icons.person_outline),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -293,6 +405,99 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _ReportPhotos extends StatelessWidget {
+  const _ReportPhotos({required this.photos});
+
+  final List<ReportPhoto> photos;
+
+  void _open(BuildContext context, ReportPhoto photo) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Center(child: _NetworkPhoto(url: photo.url)),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton.filled(
+                tooltip: '닫기',
+                onPressed: () => Navigator.pop(context),
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, ReportPhoto photo, double aspectRatio) {
+    return Semantics(
+      button: true,
+      label: '제보 사진 크게 보기',
+      child: GestureDetector(
+        onTap: () => _open(context, photo),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: _NetworkPhoto(url: photo.url, fit: BoxFit.cover),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (photos.length == 1) return _tile(context, photos.single, 16 / 9);
+    return Row(
+      children: [
+        for (final (index, photo) in photos.indexed) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(child: _tile(context, photo, 1)),
+        ],
+      ],
+    );
+  }
+}
+
+class _NetworkPhoto extends StatelessWidget {
+  const _NetworkPhoto({required this.url, this.fit = BoxFit.contain});
+
+  final Uri url;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      url.toString(),
+      fit: fit,
+      loadingBuilder: (context, child, progress) => progress == null
+          ? child
+          : const ColoredBox(
+              color: AppColors.brandSoft,
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+      errorBuilder: (context, error, stackTrace) => const ColoredBox(
+        color: AppColors.brandSoft,
+        child: Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReportCard extends StatelessWidget {
   const _ReportCard({
     required this.report,
@@ -382,6 +587,10 @@ class _ReportCard extends StatelessWidget {
             report.description,
             style: AppTextStyles.body.copyWith(height: 1.5),
           ),
+          if (report.photos.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ReportPhotos(photos: report.photos),
+          ],
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
