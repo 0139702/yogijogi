@@ -2,12 +2,16 @@ import 'package:material_ui/material_ui.dart';
 
 import 'core/app_config.dart';
 import 'core/app_theme.dart';
+import 'features/auth/auth_service.dart';
+import 'features/auth/cognito_auth_service.dart';
+import 'features/auth/demo_auth_service.dart';
 import 'features/map/map_screen.dart';
+import 'features/mypage/my_page_screen.dart';
 import 'features/map/prime_floor.dart';
 import 'features/navigation/route_option.dart';
 import 'features/navigation/route_screen.dart';
 import 'features/reports/report_api.dart';
-import 'features/reports/reports_screen.dart';
+import 'features/reports/reports_gate.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -18,7 +22,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final _api = ReportApi(AppConfig.apiBaseUrl);
+  final AuthService _auth = AppConfig.isCognitoConfigured
+      ? CognitoAuthService(
+          region: AppConfig.cognitoRegion,
+          clientId: AppConfig.cognitoClientId,
+        )
+      : DemoAuthService();
   int _index = 0;
+  String? _reportLocation;
   PrimePlace _start = PrimePlace.elevator;
   PrimePlace? _destination;
   RouteOption _routeOption = RouteOption.shortest;
@@ -28,6 +39,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _api.close();
+    _auth.dispose();
     super.dispose();
   }
 
@@ -58,8 +70,10 @@ class _MyAppState extends State<MyApp> {
                 guideStep: _guideStep,
                 active: _index == 0,
                 routePreview: _routePreview && demoRoute.isNotEmpty,
-                onReport: (location) =>
-                    showReportForm(context, _api, location: location),
+                onReport: (location) => setState(() {
+                  _reportLocation = location;
+                  _index = 2;
+                }),
                 onDirections: () => setState(() {
                   _routePreview = false;
                   _index = 1;
@@ -115,31 +129,24 @@ class _MyAppState extends State<MyApp> {
                 },
               ),
               if (_index == 2)
-                ReportsScreen(api: _api)
+                ReportsGate(
+                  auth: _auth,
+                  api: _api,
+                  initialLocation: _reportLocation,
+                )
               else
                 const SizedBox.shrink(),
-              ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.flag_outlined),
-                    title: const Text('제보 피드 보기'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => setState(() => _index = 2),
-                  ),
-                  const ListTile(
-                    leading: Icon(Icons.info_outline),
-                    title: Text('캠퍼스 정보'),
-                    subtitle: Text('성신여대 수정캠퍼스 · 프라임관 6층'),
-                  ),
-                ],
-              ),
+              if (_index == 3)
+                const MyPageScreen()
+              else
+                const SizedBox.shrink(),
             ],
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _index,
             onDestinationSelected: (index) => setState(() {
               _routePreview = false;
+              if (index != 2) _reportLocation = null;
               _index = index;
             }),
             destinations: const [

@@ -136,9 +136,7 @@ void main() {
     expect(find.text('경로 · 엘리베이터 앞 → 603호'), findsNothing);
   }, variant: desktop);
 
-  testWidgets('opens the reports tab without an API configuration', (
-    tester,
-  ) async {
+  testWidgets('asks to log in when opening the reports tab', (tester) async {
     await tester.pumpWidget(const MyApp());
     expect(find.byTooltip('알림'), findsOneWidget);
     expect(find.text('YogiJogi'), findsOneWidget);
@@ -146,7 +144,22 @@ void main() {
     await tester.tap(find.text('제보'));
     await tester.pumpAndSettle();
 
-    expect(find.text('제보를 보려면 API 주소를 설정해 주세요.'), findsOneWidget);
+    expect(find.text('로그인하고 제보에 참여해요'), findsOneWidget);
+  }, variant: desktop);
+
+  testWidgets('requires login when reporting a building from the map', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('건물명, 강의실, 또는 제보 검색'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), '공학');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('프라임관'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('제보하기'));
+    await tester.pumpAndSettle();
+    expect(find.text('로그인하고 제보에 참여해요'), findsOneWidget);
   }, variant: desktop);
 
   testWidgets('route options only display verified demo paths', (tester) async {

@@ -7,6 +7,10 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['false', 'true']
+  AllowedEmailDomains:
+    Type: String
+    Default: sungshin.ac.kr
+    Description: Comma-separated school email domains allowed to sign up
 
 Resources:
   Api:
@@ -53,6 +57,15 @@ Resources:
         UpdateReport:
           Type: HttpApi
           Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: PUT }
+        GetClassroom:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/classrooms/{id}', Method: GET }
+        ListMyReports:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /me/reports, Method: GET }
+        GetMyReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/me/reports/{id}', Method: GET }
 
   ReportsTable:
     Type: AWS::Serverless::SimpleTable
@@ -67,6 +80,79 @@ Resources:
     Properties:
       PrimaryKey: { Name: id, Type: String }
 
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-users'
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes: [email]
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireNumbers: true
+          RequireLowercase: false
+          RequireUppercase: false
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: '[요기조기] 학교 이메일 인증 코드'
+        EmailMessage: '요기조기 회원가입 인증 코드는 {####} 입니다. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.'
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: yogijogi-mobile
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      ReadAttributes: [email, email_verified, nickname]
+      WriteAttributes: [email, nickname]
+
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      CodeUri: src/
+      Handler: pre-sign-up.handler
+      Timeout: 5
+      Environment:
+        Variables:
+          ALLOWED_EMAIL_DOMAINS: !Ref AllowedEmailDomains
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:ListUsers
+              Resource: !Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*'
+
+  PreSignUpPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PreSignUpFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
 Outputs:
   ApiBaseUrl:
     Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}'
+  CognitoRegion:
+    Value: !Ref AWS::Region
+  CognitoUserPoolId:
+    Value: !Ref UserPool
+  CognitoClientId:
+    Value: !Ref UserPoolClient
