@@ -7,6 +7,7 @@ class Report {
       occurredAt = DateTime.parse(json['occurredAt'] as String),
       status = json['status'] as String,
       source = json['source'] as String,
+      authorId = json['authorId'] as String?,
       updatedAt = DateTime.parse(json['updatedAt'] as String),
       photos = [
         for (final photo in json['photos'] as List<dynamic>? ?? const [])
@@ -20,6 +21,9 @@ class Report {
   final DateTime occurredAt;
   final String status;
   final String source;
+
+  /// 제보를 올린 사용자 ID. 작성자 정보가 없는 제보(샘플 등)는 null이다.
+  final String? authorId;
   final DateTime updatedAt;
   final List<ReportPhoto> photos;
 }

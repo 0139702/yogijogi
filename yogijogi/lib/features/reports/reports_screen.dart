@@ -44,7 +44,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<void> _refresh() {
     final reports = widget.api.list();
-    setState(() => _reports = reports);
+    setState(() {
+      _reports = reports;
+    });
     return reports.then((_) {}, onError: (_) {});
   }
 
@@ -59,6 +61,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     );
     if (saved != null && mounted) _refresh();
+  }
+
+  bool _isMine(Report report) {
+    final userId = widget.auth?.currentUser?.id;
+    return userId != null && report.authorId == userId;
   }
 
   void _comingSoon(String message) {
@@ -182,7 +189,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           for (final report in reports)
             _ReportCard(
               report: report,
-              onEdit: () => _edit(report),
+              onEdit: _isMine(report) ? () => _edit(report) : null,
               onShowMap: () => _comingSoon('지도 연동 후 이용할 수 있어요.'),
             ),
         ],
@@ -509,7 +516,9 @@ class _ReportCard extends StatelessWidget {
   });
 
   final Report report;
-  final VoidCallback onEdit;
+
+  /// 내가 올린 제보일 때만 넘긴다. null이면 수정 버튼을 숨긴다.
+  final VoidCallback? onEdit;
   final VoidCallback onShowMap;
 
   @override
@@ -628,20 +637,22 @@ class _ReportCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onEdit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.brandStrong,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: buttonShape,
-                    textStyle: AppTextStyles.body,
+              if (onEdit != null) ...[
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onEdit,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brandStrong,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: buttonShape,
+                      textStyle: AppTextStyles.body,
+                    ),
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('제보 수정'),
                   ),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('제보 수정'),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.elementGapHorizontal),
+                const SizedBox(width: AppSpacing.elementGapHorizontal),
+              ],
               Expanded(
                 child: FilledButton.icon(
                   onPressed: onShowMap,

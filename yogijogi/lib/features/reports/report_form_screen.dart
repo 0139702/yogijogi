@@ -44,6 +44,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   bool _submitted = false;
   bool _saving = false;
   bool _failed = false;
+  bool _deleteFailed = false;
   final _picker = ImagePicker();
   final _photos = <XFile>[];
   late final _keptPhotos = [...?widget.report?.photos];
@@ -90,6 +91,46 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// 담당자 확인 전인 내 제보를 지운다. 피드가 목록을 새로 불러오도록 원래 제보를 돌려준다.
+  Future<void> _delete(Report report) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('제보를 삭제할까요?'),
+        content: const Text('삭제한 제보와 사진은 되돌릴 수 없어요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.hazard),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _saving = true;
+      _deleteFailed = false;
+    });
+    try {
+      await widget.api.delete(report.id);
+      if (!mounted) return;
+      _showMessage('제보를 삭제했어요.');
+      Navigator.pop(context, report);
+    } on Exception {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _deleteFailed = true;
+        });
+      }
+    }
   }
 
   Future<void> _addPhoto() async {
@@ -436,6 +477,29 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             ),
           ),
           if (_failed) const _ErrorText('저장하지 못했습니다. API 상태를 확인해 주세요.'),
+          if (widget.report case final report?) ...[
+            const SizedBox(height: 24),
+            if (report.status == 'received')
+              Center(
+                child: TextButton.icon(
+                  onPressed: _saving ? null : () => _delete(report),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.hazard,
+                    textStyle: AppTextStyles.body,
+                  ),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('제보 삭제'),
+                ),
+              )
+            else
+              Text(
+                '처리가 시작된 제보는 삭제할 수 없어요.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption,
+              ),
+            if (_deleteFailed)
+              const Center(child: _ErrorText('삭제하지 못했어요. 잠시 후 다시 시도해 주세요.')),
+          ],
         ],
       ),
       bottomNavigationBar: SafeArea(

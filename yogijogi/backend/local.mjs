@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { createHandler, PHOTO_MAX_BYTES } from './src/api.mjs';
+import { seedReports } from './local-seed.mjs';
 
 const items = new Map();
+if (process.env.SEED_REPORTS !== 'false') seedReports(items);
 
 // Stands in for S3 presigned URLs: one-time upload tokens and in-memory files.
 const uploads = new Map();
@@ -47,6 +49,7 @@ const handler = createHandler({
     items.set(id, item);
     return item;
   },
+  async remove(id) { items.delete(id); },
 }, { environment: 'local', reportsEnabled: true, photoStorage });
 
 function handleUpload(request, response, url, body) {

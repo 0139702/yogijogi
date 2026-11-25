@@ -40,6 +40,7 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:Scan
                 - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
               Resource: !GetAtt ReportsTable.Arn
       Events:
         Health:
@@ -57,6 +58,9 @@ Resources:
         UpdateReport:
           Type: HttpApi
           Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: PUT }
+        DeleteReport:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: '/reports/{id}', Method: DELETE }
         GetClassroom:
           Type: HttpApi
           Properties: { ApiId: !Ref Api, Path: '/classrooms/{id}', Method: GET }

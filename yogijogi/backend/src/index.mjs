@@ -1,5 +1,6 @@
 import {
-  DynamoDBClient, GetItemCommand, PutItemCommand, ScanCommand, UpdateItemCommand,
+  DeleteItemCommand, DynamoDBClient, GetItemCommand, PutItemCommand, ScanCommand,
+  UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
 import { createHandler } from './api.mjs';
 
@@ -48,6 +49,9 @@ const store = {
       if (error.name === 'ConditionalCheckFailedException') return null;
       throw error;
     }
+  },
+  async remove(id) {
+    await client.send(new DeleteItemCommand({ TableName, Key: encode({ id }) }));
   },
 };
 
