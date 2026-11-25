@@ -52,6 +52,9 @@ class ReportCategory {
 
 String reportStatusLabel(String status) => switch (status) {
   'received' => '담당자 확인 전',
+  'checking' => '담당자 확인 중',
+  'in_progress' => '처리 진행 중',
+  'resolved' => '처리 완료',
   _ => status,
 };
 

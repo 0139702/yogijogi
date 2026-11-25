@@ -14,6 +14,7 @@ function setup({ withPhotos = true } = {}) {
       items.set(id, { ...items.get(id), ...fields });
       return items.get(id);
     },
+    async remove(id) { items.delete(id); },
   };
   const photoStorage = {
     async createUpload(key, fields) { return { method: 'PUT', url: `upload:${key}`, headers: {}, fields }; },
@@ -24,13 +25,16 @@ function setup({ withPhotos = true } = {}) {
   const handler = createHandler(store, {
     environment: 'test', reportsEnabled: true, photoStorage: withPhotos ? photoStorage : null,
   });
-  const call = async (method, rawPath, body) => {
+  const call = async (method, rawPath, body, userId = 'user-1') => {
     const result = await handler({
-      rawPath, requestContext: { http: { method } }, body: body && JSON.stringify(body),
+      rawPath,
+      headers: userId ? { 'x-user-id': userId } : {},
+      requestContext: { http: { method } },
+      body: body && JSON.stringify(body),
     });
     return { status: result.statusCode, body: JSON.parse(result.body) };
   };
-  return { call, files };
+  return { call, files, items };
 }
 
 const report = {
@@ -116,4 +120,49 @@ test('reports photos as unavailable without photo storage', async () => {
   const { id } = await createReport(call);
   const issued = await call('POST', `/reports/${id}/photos`, { contentType: 'image/jpeg', size: 1000 });
   assert.equal(issued.status, 501);
+});
+
+test('records the author and lets only the author edit', async () => {
+  const { call } = setup();
+  const created = await createReport(call);
+  assert.equal(created.authorId, 'user-1');
+
+  const edit = { ...report, description: '수정' };
+  assert.equal((await call('PUT', `/reports/${created.id}`, edit, 'user-2')).status, 403);
+  assert.equal((await call('PUT', `/reports/${created.id}`, edit, null)).status, 401);
+  assert.equal((await call('PUT', `/reports/${created.id}`, edit)).status, 200);
+});
+
+test('requires a user to create a report', async () => {
+  const { call } = setup();
+  assert.equal((await call('POST', '/reports', report, null)).status, 401);
+});
+
+test('lets only the author change photos', async () => {
+  const { call } = setup();
+  const { id } = await createReport(call);
+  const body = { contentType: 'image/jpeg', size: 1000 };
+  assert.equal((await call('POST', `/reports/${id}/photos`, body, 'user-2')).status, 403);
+});
+
+test('lets the author delete a report before handling starts, with its photos', async () => {
+  const { call, files } = setup();
+  const { id } = await createReport(call);
+  await addPhoto(call, files, id);
+
+  assert.equal((await call('DELETE', `/reports/${id}`, undefined, 'user-2')).status, 403);
+  assert.equal((await call('DELETE', `/reports/${id}`, undefined, null)).status, 401);
+  assert.equal((await call('DELETE', `/reports/${id}`)).status, 200);
+  assert.equal((await call('GET', `/reports/${id}`)).status, 404);
+  assert.equal(files.size, 0);
+});
+
+test('keeps a report once handling has started', async () => {
+  const { call, items } = setup();
+  const { id } = await createReport(call);
+  items.set(id, { ...items.get(id), status: 'in_progress' });
+  const deleted = await call('DELETE', `/reports/${id}`);
+  assert.equal(deleted.status, 409);
+  assert.equal(deleted.body.error, 'report_in_progress');
+  assert.equal((await call('GET', `/reports/${id}`)).status, 200);
 });

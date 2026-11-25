@@ -21,7 +21,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _api = ReportApi(AppConfig.apiBaseUrl);
+  late final _api = ReportApi(
+    AppConfig.apiBaseUrl,
+    userId: () => _auth.currentUser?.id,
+  );
   final AuthService _auth = AppConfig.isCognitoConfigured
       ? CognitoAuthService(
           region: AppConfig.cognitoRegion,
@@ -56,9 +59,6 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.light,
       home: Builder(
         builder: (context) => Scaffold(
-          appBar: _index <= 1
-              ? null
-              : AppBar(title: Text(['요기조기', '길찾기', '제보', '마이'][_index])),
           body: IndexedStack(
             index: _index,
             children: [

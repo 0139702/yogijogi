@@ -51,6 +51,13 @@ function readPhotoRequest(event) {
 
 const photoKey = (reportId, photoId) => `reports/${reportId}/${photoId}`;
 
+// 앱이 보내는 로그인 사용자 ID. 위조할 수 있으므로 Cognito 토큰 검증으로 바꾸기 전까지
+// 시연·개발용으로만 본인 확인에 쓴다.
+function readUserId(event) {
+  const value = event.headers?.['x-user-id']?.trim();
+  return value && value.length <= 128 ? value : null;
+}
+
 export function createHandler(store, { environment, reportsEnabled, photoStorage = null }) {
   // Storage keys stay on the server; clients only get a short-lived URL per photo.
   async function present(item, event) {
@@ -122,10 +129,13 @@ export function createHandler(store, { environment, reportsEnabled, photoStorage
 
     const [, id, photoId, complete] = match;
     const isPhotoPath = path.includes('/photos');
+    const userId = readUserId(event);
+    const isAuthor = (report) => Boolean(userId) && report.authorId === userId;
     try {
       if (isPhotoPath) {
         const report = await store.get(id);
         if (!report) return respond(404, { error: 'not_found' });
+        if (!isAuthor(report)) return respond(403, { error: 'forbidden' });
         return await handlePhotos(event, method, report, photoId, Boolean(complete));
       }
       if (method === 'GET' && !id) {
@@ -139,18 +149,35 @@ export function createHandler(store, { environment, reportsEnabled, photoStorage
         if (!item) return respond(404, { error: 'not_found' });
         return respond(200, photoStorage ? await present(item, event) : item);
       }
+      if (method === 'DELETE' && id) {
+        if (!userId) return respond(401, { error: 'login_required' });
+        const report = await store.get(id);
+        if (!report) return respond(404, { error: 'not_found' });
+        if (!isAuthor(report)) return respond(403, { error: 'forbidden' });
+        // 담당자 처리가 시작된 제보는 기록으로 남긴다.
+        if (report.status !== 'received') return respond(409, { error: 'report_in_progress' });
+        if (photoStorage) {
+          await Promise.all((report.photos ?? []).map((photo) => photoStorage.remove(photo.key)));
+        }
+        await store.remove(id);
+        return respond(200, { id });
+      }
       if ((method === 'POST' && !id) || (method === 'PUT' && id)) {
+        if (!userId) return respond(401, { error: 'login_required' });
         const fields = readReport(event);
         if (!fields) return respond(400, { error: 'invalid_report' });
         const updatedAt = new Date().toISOString();
         if (id) {
+          const previous = await store.get(id);
+          if (!previous) return respond(404, { error: 'not_found' });
+          if (!isAuthor(previous)) return respond(403, { error: 'forbidden' });
           const item = await store.update(id, { ...fields, updatedAt });
           if (!item) return respond(404, { error: 'not_found' });
           return respond(200, photoStorage ? await present(item, event) : item);
         }
         const item = {
           ...fields, id: randomUUID(), status: 'received', source: 'user_report',
-          createdAt: updatedAt, updatedAt,
+          authorId: userId, createdAt: updatedAt, updatedAt,
         };
         await store.create(item);
         return respond(201, photoStorage ? await present(item, event) : item);
